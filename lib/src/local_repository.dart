@@ -30,7 +30,7 @@ class LocalRepository {
             ),
           )
           .toList();
-    } on FormatException {
+    } on Object {
       return <HourEntry>[];
     }
   }
@@ -50,7 +50,7 @@ class LocalRepository {
       return categories.isEmpty
           ? List<TimeCategory>.from(defaultCategories)
           : categories;
-    } on FormatException {
+    } on Object {
       return List<TimeCategory>.from(defaultCategories);
     }
   }
@@ -62,7 +62,7 @@ class LocalRepository {
       return AppSettings.fromJson(
         Map<String, Object?>.from(jsonDecode(raw) as Map<dynamic, dynamic>),
       );
-    } on FormatException {
+    } on Object {
       return const AppSettings();
     }
   }

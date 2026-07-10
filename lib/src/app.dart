@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'csv_export.dart';
 import 'edit_hour_screen.dart';
 import 'models.dart';
 import 'report_screen.dart';
@@ -10,9 +11,14 @@ import 'settings_screen.dart';
 import 'today_screen.dart';
 
 class TimeTrackerApp extends StatelessWidget {
-  const TimeTrackerApp({super.key, required this.store});
+  const TimeTrackerApp({
+    super.key,
+    required this.store,
+    this.csvExporter = const PlatformCsvExporter(),
+  });
 
   final AppStore store;
+  final CsvExporter csvExporter;
 
   @override
   Widget build(BuildContext context) {
@@ -53,15 +59,16 @@ class TimeTrackerApp extends StatelessWidget {
           ),
         ),
       ),
-      home: AppShell(store: store),
+      home: AppShell(store: store, csvExporter: csvExporter),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.store});
+  const AppShell({super.key, required this.store, required this.csvExporter});
 
   final AppStore store;
+  final CsvExporter csvExporter;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -149,7 +156,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         date: _selectedDate,
         onDateChanged: _setDate,
       ),
-      SettingsScreen(store: widget.store),
+      SettingsScreen(store: widget.store, csvExporter: widget.csvExporter),
     ];
 
     return LayoutBuilder(

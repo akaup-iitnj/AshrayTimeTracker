@@ -10,7 +10,11 @@ The app should feel calm, fast, and sticky. It should not become a project-manag
 
 Phase 1 is implemented and verified on an Android emulator. The local app includes the 24-hour timeline, month-calendar navigation, task/category editing, in-editor custom-category creation, category management, daily report, persistent on-device data, notification permission flow, scheduled hourly prompts, and reminder deep-link payloads. The Android debug APK builds successfully.
 
-Phase 2 is implemented with email/password accounts, offline-first local data, last-write-wins merging, tombstone deletions, background retries, and sync status. The configured Supabase project has the migration and row-level-security policies applied, and all three REST endpoints are reachable. The Windows Flutter target is scaffolded but remains part of Phase 3 as planned.
+Phase 2 is implemented with email/password accounts, offline-first local data, last-write-wins merging, tombstone deletions, background retries, and sync status. The configured Supabase project has the migration and row-level-security policies applied, and all three REST endpoints are reachable.
+
+Phase 3 is complete. The native Windows release builds and runs on the development PC, shares the responsive Android interface, and synchronizes through the same Supabase account.
+
+The version 0.4 reliability milestone adds CSV backup, persistence recovery, expanded sync and UI tests, a native restart smoke test, a manual Android/cross-device checklist, a 60% coverage floor, and Android/Windows GitHub Actions builds.
 
 ## Core User Story
 
@@ -253,6 +257,8 @@ Deliverables:
 - Pie chart.
 - Completion streak or daily fill score.
 
+Current status: CSV export, category colors, the donut chart, empty report state, and daily completion score are implemented. The next product-focused improvements should reduce logging friction with range filling and previous-hour copying before adding broader analytics.
+
 ## First Implementation Tasks
 
 1. [x] Create a Flutter project.
@@ -262,6 +268,10 @@ Deliverables:
 5. [x] Add category totals and a donut chart for the selected day.
 6. [x] Add Android hourly notifications.
 7. [x] Add Supabase schema and sync after the local MVP works.
+8. [x] Build and validate the native Windows client.
+9. [x] Add CSV export for portable backups.
+10. [x] Add expanded sync, persistence, account, and UI tests.
+11. [x] Add native smoke testing and GitHub Actions for Android and Windows.
 
 ## Product Principles
 

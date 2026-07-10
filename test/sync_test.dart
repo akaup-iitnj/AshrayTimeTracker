@@ -1,76 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hourly_time_tracker/src/app_store.dart';
-import 'package:hourly_time_tracker/src/cloud_repository.dart';
-import 'package:hourly_time_tracker/src/local_repository.dart';
 import 'package:hourly_time_tracker/src/models.dart';
-import 'package:hourly_time_tracker/src/reminder_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hourly_time_tracker/src/cloud_repository.dart';
 
-class FakeCloudRepository implements CloudRepository {
-  FakeCloudRepository({
-    this.signedIn = true,
-    this.remote = const CloudSnapshot(
-      categories: [],
-      entries: [],
-      settings: null,
-    ),
-  });
-
-  bool signedIn;
-  CloudSnapshot remote;
-  CloudSnapshot? pushed;
-  Object? fetchError;
-
-  @override
-  Stream<void> get authChanges => const Stream<void>.empty();
-
-  @override
-  String? get currentUserEmail => signedIn ? 'test@example.com' : null;
-
-  @override
-  String? get currentUserId => signedIn ? 'user-1' : null;
-
-  @override
-  bool get isSignedIn => signedIn;
-
-  @override
-  Future<CloudSnapshot> fetchSnapshot() async {
-    if (fetchError case final error?) throw error;
-    return remote;
-  }
-
-  @override
-  Future<void> pushSnapshot(CloudSnapshot snapshot) async {
-    pushed = snapshot;
-    remote = snapshot;
-  }
-
-  @override
-  Future<void> signIn(String email, String password) async {
-    signedIn = true;
-  }
-
-  @override
-  Future<void> signOut() async {
-    signedIn = false;
-  }
-
-  @override
-  Future<CloudAuthResult> signUp(String email, String password) async {
-    signedIn = true;
-    return const CloudAuthResult(needsEmailConfirmation: false);
-  }
-}
-
-Future<AppStore> createStore(FakeCloudRepository cloud) async {
-  SharedPreferences.setMockInitialValues(<String, Object>{});
-  final preferences = await SharedPreferences.getInstance();
-  return AppStore.load(
-    LocalRepository(preferences),
-    NoopReminderScheduler(),
-    cloud,
-  );
-}
+import 'support/fake_cloud_repository.dart';
 
 void main() {
   test('a newer cloud entry is merged into the local store', () async {
@@ -167,6 +101,180 @@ void main() {
     expect(store.entryFor(date, 14), isNull);
     expect(cloud.pushed?.entries.single.deletedAt, isNotNull);
   });
+
+  test('a newer local entry wins and is uploaded', () async {
+    final cloud = FakeCloudRepository(signedIn: false);
+    final store = await createStore(cloud);
+    final date = DateTime(2026, 7, 11);
+    await store.saveEntry(
+      date: date,
+      hourStart: 10,
+      task: 'Edited locally',
+      categoryId: 'work',
+    );
+    final local = store.entryFor(date, 10)!;
+    cloud
+      ..remote = CloudSnapshot(
+        categories: const [],
+        entries: [
+          HourEntry(
+            date: local.date,
+            hourStart: local.hourStart,
+            task: 'Older cloud edit',
+            categoryId: 'learning',
+            createdAt: local.createdAt,
+            updatedAt: local.updatedAt.subtract(const Duration(minutes: 5)),
+          ),
+        ],
+        settings: null,
+      )
+      ..signedIn = true;
+
+    await store.synchronize();
+
+    expect(store.entryFor(date, 10)?.task, 'Edited locally');
+    expect(cloud.pushed?.entries.single.task, 'Edited locally');
+  });
+
+  test('a newer cloud tombstone removes an older local entry', () async {
+    final cloud = FakeCloudRepository(signedIn: false);
+    final store = await createStore(cloud);
+    final date = DateTime(2026, 7, 11);
+    await store.saveEntry(
+      date: date,
+      hourStart: 11,
+      task: 'Delete this elsewhere',
+      categoryId: 'work',
+    );
+    final local = store.entryFor(date, 11)!;
+    final deletedAt = local.updatedAt.add(const Duration(minutes: 5));
+    cloud
+      ..remote = CloudSnapshot(
+        categories: const [],
+        entries: [
+          HourEntry(
+            date: local.date,
+            hourStart: local.hourStart,
+            task: local.task,
+            categoryId: local.categoryId,
+            createdAt: local.createdAt,
+            updatedAt: deletedAt,
+            deletedAt: deletedAt,
+          ),
+        ],
+        settings: null,
+      )
+      ..signedIn = true;
+
+    await store.synchronize();
+
+    expect(store.entryFor(date, 11), isNull);
+    expect(cloud.pushed?.entries.single.deletedAt, deletedAt);
+  });
+
+  test('newer cloud settings replace older local settings', () async {
+    final cloud = FakeCloudRepository(signedIn: false);
+    final store = await createStore(cloud);
+    await store.updateReminderWindow(9, 20);
+    final local = store.settings;
+    cloud
+      ..remote = CloudSnapshot(
+        categories: const [],
+        entries: const [],
+        settings: AppSettings(
+          remindersEnabled: true,
+          reminderStartHour: 7,
+          reminderEndHour: 22,
+          createdAt: local.createdAt,
+          updatedAt: local.updatedAt!.add(const Duration(minutes: 5)),
+        ),
+      )
+      ..signedIn = true;
+
+    await store.synchronize();
+
+    expect(store.settings.remindersEnabled, isTrue);
+    expect(store.settings.reminderStartHour, 7);
+    expect(store.settings.reminderEndHour, 22);
+  });
+
+  test('a failed sync preserves local data and a retry recovers', () async {
+    final cloud = FakeCloudRepository(signedIn: false);
+    final store = await createStore(cloud);
+    final date = DateTime(2026, 7, 11);
+    await store.saveEntry(
+      date: date,
+      hourStart: 12,
+      task: 'Available offline',
+      categoryId: 'work',
+    );
+    cloud
+      ..signedIn = true
+      ..fetchError = Exception('Network unavailable');
+
+    await store.synchronize();
+
+    expect(store.entryFor(date, 12)?.task, 'Available offline');
+    expect(store.syncError, contains('Network unavailable'));
+
+    cloud.fetchError = null;
+    await store.synchronize();
+
+    expect(store.syncError, isNull);
+    expect(cloud.pushed?.entries.single.task, 'Available offline');
+  });
+
+  test(
+    'an edit made during a push is included in the follow-up sync',
+    () async {
+      final pushStarted = Completer<void>();
+      final pushGate = Completer<void>();
+      final cloud = FakeCloudRepository(
+        pushStarted: pushStarted,
+        pushGate: pushGate,
+      );
+      final store = await createStore(cloud);
+      final date = DateTime(2026, 7, 11);
+
+      final syncing = store.synchronize();
+      await pushStarted.future;
+      await store.saveEntry(
+        date: date,
+        hourStart: 13,
+        task: 'Saved during sync',
+        categoryId: 'work',
+      );
+      pushGate.complete();
+      await syncing;
+
+      expect(cloud.pushCount, greaterThanOrEqualTo(2));
+      expect(
+        cloud.remote.entries.any((entry) => entry.task == 'Saved during sync'),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'sign-in rejects a different account on a linked installation',
+    () async {
+      final cloud = FakeCloudRepository(signedIn: false, userId: 'user-2');
+      final store = await createStore(
+        cloud,
+        initialPreferences: const <String, Object>{
+          'linked_cloud_user_v1': 'user-1',
+        },
+      );
+
+      await expectLater(
+        store.signIn('other@example.com', 'password'),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(cloud.signedIn, isFalse);
+      expect(store.isCloudSignedIn, isFalse);
+    },
+  );
 
   test('a missing Supabase schema becomes an actionable sync error', () async {
     final cloud = FakeCloudRepository()

@@ -5,12 +5,18 @@ import 'package:flutter/material.dart';
 import 'account_screen.dart';
 import 'app_store.dart';
 import 'category_editor_dialog.dart';
+import 'csv_export.dart';
 import 'models.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key, required this.store});
+  const SettingsScreen({
+    super.key,
+    required this.store,
+    required this.csvExporter,
+  });
 
   final AppStore store;
+  final CsvExporter csvExporter;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +85,8 @@ class SettingsScreen extends StatelessWidget {
                 const _SectionTitle(title: 'Data'),
                 const SizedBox(height: 10),
                 _CloudCard(store: store),
+                const SizedBox(height: 10),
+                _ExportCard(store: store, csvExporter: csvExporter),
               ],
             );
           },
@@ -127,6 +135,77 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true) await store.deleteCategory(category.id);
+  }
+}
+
+class _ExportCard extends StatefulWidget {
+  const _ExportCard({required this.store, required this.csvExporter});
+
+  final AppStore store;
+  final CsvExporter csvExporter;
+
+  @override
+  State<_ExportCard> createState() => _ExportCardState();
+}
+
+class _ExportCardState extends State<_ExportCard> {
+  bool _exporting = false;
+
+  Future<void> _export() async {
+    final data = buildCsvExport(widget.store);
+    if (data.entryCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('There are no logged hours to export yet.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _exporting = true);
+    try {
+      final outcome = await widget.csvExporter.export(data);
+      if (!mounted || outcome == CsvExportOutcome.cancelled) return;
+      final action = outcome == CsvExportOutcome.saved ? 'Saved' : 'Shared';
+      final noun = data.entryCount == 1 ? 'hour' : 'hours';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$action ${data.entryCount} logged $noun as CSV.'),
+        ),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('CSV export failed: $error')));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        enabled: !_exporting,
+        onTap: _exporting ? null : _export,
+        leading: const Icon(Icons.file_download_outlined),
+        title: const Text('Export CSV'),
+        subtitle: const Text(
+          'Save every logged hour as a spreadsheet-ready backup.',
+        ),
+        trailing: _exporting
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right),
+      ),
+    );
   }
 }
 

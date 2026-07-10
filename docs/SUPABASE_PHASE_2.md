@@ -19,7 +19,7 @@ Use email and password for the first personal version. Supabase enables this pro
 
 ## Implemented app integration
 
-The version 0.3 client now includes:
+The version 0.4 client includes:
 
 1. `supabase_flutter` initialization with the project's publishable client values.
 2. Email/password sign-up, sign-in, sign-out, and account status.

@@ -4,7 +4,7 @@ A clean hourly time catalog for Android and Windows, built with Flutter. Each da
 
 ## Current status
 
-Phase 1 is complete and the Phase 2 sync client is implemented.
+The Android MVP, cloud sync, and native Windows client are complete. Version 0.4 adds automated reliability checks and portable CSV backups.
 
 - Browse any day as 24 one-hour blocks.
 - Open a month calendar to jump directly to another day.
@@ -20,6 +20,9 @@ Phase 1 is complete and the Phase 2 sync client is implemented.
 - Merge entries, categories, settings, and deletions across signed-in devices.
 - Continue logging offline and retry synchronization in the background.
 - Use the same responsive interface in the generated Windows target.
+- Export every non-deleted entry to a spreadsheet-ready CSV file.
+- Run a native smoke test that covers logging, reporting, restart persistence, and deletion.
+- Validate every GitHub change with Android and Windows CI builds.
 
 The Supabase project is configured and its Phase 2 migration has been applied. Open **Settings → Data → Cloud sync** to create an account or sign in.
 
@@ -63,11 +66,14 @@ When updating an existing installation, open the new APK and choose **Update**. 
 
 ```powershell
 flutter analyze
-flutter test
+flutter test --coverage
+dart run tool/check_coverage.dart 60
+flutter test integration_test -d windows
 flutter build apk --debug
+flutter build windows --release
 ```
 
-The automated tests cover hour formatting, reminder payloads, completion rules, calendar/category interactions, local-to-cloud merging, tombstone deletion, seed-data conflicts, schema errors, and the complete log-an-hour interaction.
+The automated suite covers hour formatting, persistence recovery, category behavior, CSV escaping, calendar and report interactions, account UI, bidirectional conflict resolution, tombstone deletion, offline retry, edits during synchronization, account linkage, schema errors, and the complete log-report-restart-delete smoke flow. See `docs/SMOKE_TESTS.md` for the Android and cross-device release checklist.
 
 To check the app version from PowerShell:
 
@@ -75,7 +81,7 @@ To check the app version from PowerShell:
 (Select-String -Path pubspec.yaml -Pattern '^version:').Line
 ```
 
-The current result is `version: 0.3.0+3`—version 0.3.0, Android build 3.
+The current result is `version: 0.4.0+4`—version 0.4.0, Android build 4.
 
 ## Reminder behavior
 
@@ -95,6 +101,7 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `lib/src/account_screen.dart` — account creation, sign-in, and sync status.
 - `lib/src/cloud_config.dart` — Supabase client configuration.
 - `lib/src/cloud_repository.dart` — authenticated reads, writes, and remote mapping.
+- `lib/src/csv_export.dart` — chronological CSV generation and platform export.
 - `lib/src/category_editor_dialog.dart` — reusable custom-category editor.
 - `lib/src/reminder_service.dart` — Android permission, scheduling, and reminder deep links.
 - `lib/src/today_screen.dart` — 24-hour daily catalog.
@@ -103,10 +110,21 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `lib/src/settings_screen.dart` — reminder and category controls.
 - `docs/PRODUCT_PLAN.md` — product scope and phased roadmap.
 - `docs/SUPABASE_PHASE_2.md` — cloud project handoff and integration sequence.
+- `docs/SMOKE_TESTS.md` — automated commands and manual release checks.
 - `supabase/migrations/001_initial_schema.sql` — Phase 2 tables and ownership policies.
+- `.github/workflows/flutter.yml` — Android and Windows continuous integration.
 
 ## Use Phase 2
 
-Install the version 0.3 APK, then open **Settings → Data → Cloud sync** and create an account. Email confirmation is enabled by default in hosted Supabase projects; after confirming, return to the app and sign in.
+Install the version 0.4 APK, then open **Settings → Data → Cloud sync** and create an account. Email confirmation is enabled by default in hosted Supabase projects; after confirming, return to the app and sign in.
 
-Phase 3 is the Windows executable. The shared Windows shell already exists, but this machine still needs Visual Studio's **Desktop development with C++** workload before it can be built.
+## Run it on Windows
+
+The Windows toolchain is installed on the current development PC. Build and launch the optimized desktop app with:
+
+```powershell
+flutter build windows --release
+& "build\windows\x64\runner\Release\hourly_time_tracker.exe"
+```
+
+Keep the executable with the DLLs and data folders beside it. Sign in with the same account used on Android to download the shared history.
