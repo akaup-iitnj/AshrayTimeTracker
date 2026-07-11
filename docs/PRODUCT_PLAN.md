@@ -16,6 +16,8 @@ Phase 3 is complete. The native Windows release builds and runs on the developme
 
 The version 0.4 reliability milestone adds CSV backup, persistence recovery, expanded sync and UI tests, a native restart smoke test, a manual Android/cross-device checklist, a 60% coverage floor, and Android/Windows GitHub Actions builds.
 
+The dashboard integration layer adds a versioned, read-only Supabase snapshot, realtime invalidation events, and an optional stdio MCP adapter. A future dashboard can use the same Supabase account and show Time Tracker updates without maintaining a second data store.
+
 ## Core User Story
 
 Every hour, the app prompts the user to answer one question: "What did I do in the last hour?"
@@ -272,6 +274,7 @@ Current status: CSV export, category colors, the donut chart, empty report state
 9. [x] Add CSV export for portable backups.
 10. [x] Add expanded sync, persistence, account, and UI tests.
 11. [x] Add native smoke testing and GitHub Actions for Android and Windows.
+12. [x] Add a versioned dashboard API, realtime refresh, and read-only MCP adapter.
 
 ## Product Principles
 

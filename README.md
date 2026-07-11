@@ -23,6 +23,8 @@ The Android MVP, cloud sync, and native Windows client are complete. Version 0.4
 - Export every non-deleted entry to a spreadsheet-ready CSV file.
 - Run a native smoke test that covers logging, reporting, restart persistence, and deletion.
 - Validate every GitHub change with Android and Windows CI builds.
+- Publish a versioned, read-only dashboard snapshot with realtime refresh signals.
+- Offer optional MCP tools for snapshots, entries, and summaries.
 
 The Supabase project is configured and its Phase 2 migration has been applied. Open **Settings → Data → Cloud sync** to create an account or sign in.
 
@@ -111,7 +113,10 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `docs/PRODUCT_PLAN.md` — product scope and phased roadmap.
 - `docs/SUPABASE_PHASE_2.md` — cloud project handoff and integration sequence.
 - `docs/SMOKE_TESTS.md` — automated commands and manual release checks.
+- `docs/DASHBOARD_INTEGRATION.md` — dashboard API, realtime, and MCP setup.
 - `supabase/migrations/001_initial_schema.sql` — Phase 2 tables and ownership policies.
+- `supabase/migrations/002_dashboard_integration.sql` — versioned dashboard RPC and realtime publication.
+- `mcp-server/` — read-only stdio MCP adapter for AI clients.
 - `.github/workflows/flutter.yml` — Android and Windows continuous integration.
 
 ## Use Phase 2
