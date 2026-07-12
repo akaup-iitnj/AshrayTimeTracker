@@ -125,6 +125,8 @@ class AppSettings {
     this.remindersEnabled = false,
     this.reminderStartHour = 8,
     this.reminderEndHour = 23,
+    this.morningVideosEnabled = false,
+    this.morningVideosHour = 8,
     this.timezone = 'UTC',
     this.createdAt,
     this.updatedAt,
@@ -133,6 +135,8 @@ class AppSettings {
   final bool remindersEnabled;
   final int reminderStartHour;
   final int reminderEndHour;
+  final bool morningVideosEnabled;
+  final int morningVideosHour;
   final String timezone;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -141,6 +145,8 @@ class AppSettings {
     bool? remindersEnabled,
     int? reminderStartHour,
     int? reminderEndHour,
+    bool? morningVideosEnabled,
+    int? morningVideosHour,
     String? timezone,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -149,6 +155,8 @@ class AppSettings {
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
       reminderStartHour: reminderStartHour ?? this.reminderStartHour,
       reminderEndHour: reminderEndHour ?? this.reminderEndHour,
+      morningVideosEnabled: morningVideosEnabled ?? this.morningVideosEnabled,
+      morningVideosHour: morningVideosHour ?? this.morningVideosHour,
       timezone: timezone ?? this.timezone,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now().toUtc(),
@@ -159,6 +167,8 @@ class AppSettings {
     'remindersEnabled': remindersEnabled,
     'reminderStartHour': reminderStartHour,
     'reminderEndHour': reminderEndHour,
+    'morningVideosEnabled': morningVideosEnabled,
+    'morningVideosHour': morningVideosHour,
     'timezone': timezone,
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
@@ -169,9 +179,53 @@ class AppSettings {
       remindersEnabled: json['remindersEnabled'] as bool? ?? false,
       reminderStartHour: json['reminderStartHour'] as int? ?? 8,
       reminderEndHour: json['reminderEndHour'] as int? ?? 23,
+      morningVideosEnabled: json['morningVideosEnabled'] as bool? ?? false,
+      morningVideosHour: json['morningVideosHour'] as int? ?? 8,
       timezone: json['timezone'] as String? ?? 'UTC',
       createdAt: _dateTimeFromJson(json['createdAt']),
       updatedAt: _dateTimeFromJson(json['updatedAt']),
+    );
+  }
+}
+
+class DailyReflection {
+  const DailyReflection({
+    required this.date,
+    required this.mood,
+    required this.energy,
+    required this.calm,
+    required this.note,
+    required this.updatedAt,
+    this.createdAt,
+  });
+
+  final String date;
+  final int mood;
+  final int energy;
+  final int calm;
+  final String note;
+  final DateTime updatedAt;
+  final DateTime? createdAt;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'date': date,
+    'mood': mood,
+    'energy': energy,
+    'calm': calm,
+    'note': note,
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory DailyReflection.fromJson(Map<String, Object?> json) {
+    return DailyReflection(
+      date: json['date']! as String,
+      mood: json['mood']! as int,
+      energy: json['energy']! as int,
+      calm: json['calm']! as int,
+      note: json['note'] as String? ?? '',
+      createdAt: _dateTimeFromJson(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']! as String).toUtc(),
     );
   }
 }

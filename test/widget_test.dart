@@ -131,6 +131,27 @@ void main() {
     expect(find.text('2h · 100%'), findsOneWidget);
   });
 
+  testWidgets('saves a daily wellbeing check-in', (tester) async {
+    final store = await createTestStore();
+    await tester.pumpWidget(TimeTrackerApp(store: store));
+
+    await tester.tap(find.text('Check-in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Daily check-in'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Felt focused and calm.');
+    await tester.ensureVisible(find.text('Save check-in'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save check-in'));
+    await tester.pumpAndSettle();
+
+    final reflection = store.reflectionFor(DateTime.now());
+    expect(reflection?.mood, 3);
+    expect(reflection?.energy, 3);
+    expect(reflection?.calm, 3);
+    expect(reflection?.note, 'Felt focused and calm.');
+  });
+
   testWidgets('signs in and signs out through the account screen', (
     tester,
   ) async {

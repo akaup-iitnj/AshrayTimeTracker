@@ -25,6 +25,8 @@ The Android MVP, cloud sync, and native Windows client are complete. Version 0.4
 - Validate every GitHub change with Android and Windows CI builds.
 - Publish a versioned, read-only dashboard snapshot with realtime refresh signals.
 - Offer optional MCP tools for snapshots, entries, and summaries.
+- Schedule a configurable morning reminder for two saved videos.
+- Record a private daily check-in with mood, energy, calm, and reflection text.
 
 The Supabase project is configured and its Phase 2 migration has been applied. Open **Settings → Data → Cloud sync** to create an account or sign in.
 
@@ -114,8 +116,10 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `docs/SUPABASE_PHASE_2.md` — cloud project handoff and integration sequence.
 - `docs/SMOKE_TESTS.md` — automated commands and manual release checks.
 - `docs/DASHBOARD_INTEGRATION.md` — dashboard API, realtime, and MCP setup.
+- `docs/WELLBEING_ROADMAP.md` — sleep import, voice reflection, privacy, and pattern-analysis plan.
 - `supabase/migrations/001_initial_schema.sql` — Phase 2 tables and ownership policies.
 - `supabase/migrations/002_dashboard_integration.sql` — versioned dashboard RPC and realtime publication.
+- `supabase/migrations/003_wellbeing_and_morning_videos.sql` — daily reflections, morning settings, and dashboard v2.
 - `mcp-server/` — read-only stdio MCP adapter for AI clients.
 - `.github/workflows/flutter.yml` — Android and Windows continuous integration.
 

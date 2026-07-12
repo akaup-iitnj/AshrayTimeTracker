@@ -7,6 +7,7 @@ import 'app_store.dart';
 import 'category_editor_dialog.dart';
 import 'csv_export.dart';
 import 'models.dart';
+import 'morning_videos_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
@@ -313,6 +314,69 @@ class _ReminderCard extends StatelessWidget {
                     }
                   : null,
             ),
+            if (supported) ...[
+              const Divider(),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.wb_sunny_outlined),
+                title: const Text('Morning videos'),
+                subtitle: const Text(
+                  'Show your two saved videos every morning.',
+                ),
+                value: settings.morningVideosEnabled,
+                onChanged: (enabled) async {
+                  final success = await store.setMorningVideosEnabled(enabled);
+                  if (!success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Allow notifications in Android settings to enable the morning reminder.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      key: ValueKey('morning-${settings.morningVideosHour}'),
+                      initialValue: settings.morningVideosHour,
+                      decoration: const InputDecoration(
+                        labelText: 'Every morning at',
+                      ),
+                      items: [
+                        for (var hour = 4; hour <= 12; hour++)
+                          DropdownMenuItem(
+                            value: hour,
+                            child: Text(formatHour(hour)),
+                          ),
+                      ],
+                      onChanged: settings.morningVideosEnabled
+                          ? (hour) {
+                              if (hour != null) {
+                                store.updateMorningVideosHour(hour);
+                              }
+                            }
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const MorningVideosScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('View videos'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+            ],
             if (supported) ...[
               const Divider(),
               const SizedBox(height: 10),

@@ -55,4 +55,30 @@ void main() {
     expect(store.settings.reminderStartHour, original.reminderStartHour);
     expect(store.settings.reminderEndHour, original.reminderEndHour);
   });
+
+  test('daily reflection scores are validated and saved', () async {
+    final store = await createLocalStore();
+    final date = DateTime(2026, 7, 12);
+
+    await store.saveReflection(
+      date: date,
+      mood: 4,
+      energy: 3,
+      calm: 5,
+      note: '  A calm, focused day.  ',
+    );
+    await store.saveReflection(
+      date: date,
+      mood: 9,
+      energy: 3,
+      calm: 5,
+      note: 'Invalid replacement',
+    );
+
+    final reflection = store.reflectionFor(date);
+    expect(reflection?.mood, 4);
+    expect(reflection?.energy, 3);
+    expect(reflection?.calm, 5);
+    expect(reflection?.note, 'A calm, focused day.');
+  });
 }

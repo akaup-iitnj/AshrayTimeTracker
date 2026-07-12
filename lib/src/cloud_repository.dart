@@ -7,11 +7,13 @@ class CloudSnapshot {
     required this.categories,
     required this.entries,
     required this.settings,
+    this.reflections = const [],
   });
 
   final List<TimeCategory> categories;
   final List<HourEntry> entries;
   final AppSettings? settings;
+  final List<DailyReflection> reflections;
 }
 
 class CloudAuthResult {
@@ -84,6 +86,10 @@ class SupabaseCloudRepository implements CloudRepository {
         .order('entry_date')
         .order('hour_start');
     final settingsRows = await _client.from('user_settings').select().limit(1);
+    final reflectionRows = await _client
+        .from('daily_reflections')
+        .select()
+        .order('reflection_date');
 
     return CloudSnapshot(
       categories: categoryRows.map(_categoryFromRemote).toList(),
@@ -91,6 +97,7 @@ class SupabaseCloudRepository implements CloudRepository {
       settings: settingsRows.isEmpty
           ? null
           : _settingsFromRemote(settingsRows.first),
+      reflections: reflectionRows.map(_reflectionFromRemote).toList(),
     );
   }
 
@@ -117,6 +124,16 @@ class SupabaseCloudRepository implements CloudRepository {
       await _client
           .from('user_settings')
           .upsert(_settingsToRemote(settings, userId), onConflict: 'user_id');
+    }
+    if (snapshot.reflections.isNotEmpty) {
+      await _client
+          .from('daily_reflections')
+          .upsert(
+            snapshot.reflections
+                .map((reflection) => _reflectionToRemote(reflection, userId))
+                .toList(),
+            onConflict: 'user_id,reflection_date',
+          );
     }
   }
 
@@ -154,7 +171,21 @@ class SupabaseCloudRepository implements CloudRepository {
       remindersEnabled: row['reminders_enabled'] as bool? ?? false,
       reminderStartHour: (row['reminder_start_hour'] as num?)?.toInt() ?? 8,
       reminderEndHour: (row['reminder_end_hour'] as num?)?.toInt() ?? 23,
+      morningVideosEnabled: row['morning_videos_enabled'] as bool? ?? false,
+      morningVideosHour: (row['morning_videos_hour'] as num?)?.toInt() ?? 8,
       timezone: row['timezone'] as String? ?? 'UTC',
+      createdAt: _requiredDate(row['created_at']),
+      updatedAt: _requiredDate(row['updated_at']),
+    );
+  }
+
+  DailyReflection _reflectionFromRemote(Map<String, dynamic> row) {
+    return DailyReflection(
+      date: row['reflection_date'] as String,
+      mood: (row['mood'] as num).toInt(),
+      energy: (row['energy'] as num).toInt(),
+      calm: (row['calm'] as num).toInt(),
+      note: row['note'] as String? ?? '',
       createdAt: _requiredDate(row['created_at']),
       updatedAt: _requiredDate(row['updated_at']),
     );
@@ -196,9 +227,28 @@ class SupabaseCloudRepository implements CloudRepository {
       'reminders_enabled': settings.remindersEnabled,
       'reminder_start_hour': settings.reminderStartHour,
       'reminder_end_hour': settings.reminderEndHour,
+      'morning_videos_enabled': settings.morningVideosEnabled,
+      'morning_videos_hour': settings.morningVideosHour,
       'timezone': settings.timezone,
       'created_at': settings.createdAt!.toIso8601String(),
       'updated_at': settings.updatedAt!.toIso8601String(),
+    };
+  }
+
+  Map<String, Object?> _reflectionToRemote(
+    DailyReflection reflection,
+    String userId,
+  ) {
+    return <String, Object?>{
+      'user_id': userId,
+      'reflection_date': reflection.date,
+      'mood': reflection.mood,
+      'energy': reflection.energy,
+      'calm': reflection.calm,
+      'note': reflection.note,
+      'created_at': (reflection.createdAt ?? reflection.updatedAt)
+          .toIso8601String(),
+      'updated_at': reflection.updatedAt.toIso8601String(),
     };
   }
 

@@ -12,7 +12,7 @@ Future<LocalRepository> createRepository(
 
 void main() {
   test(
-    'entries, categories, settings, and account linkage round-trip',
+    'entries, categories, reflections, settings, and account linkage round-trip',
     () async {
       final repository = await createRepository(<String, Object>{});
       final now = DateTime.utc(2026, 7, 11, 14);
@@ -37,7 +37,18 @@ void main() {
         remindersEnabled: true,
         reminderStartHour: 7,
         reminderEndHour: 21,
+        morningVideosEnabled: true,
+        morningVideosHour: 6,
         timezone: 'America/New_York',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final reflection = DailyReflection(
+        date: '2026-07-11',
+        mood: 4,
+        energy: 3,
+        calm: 5,
+        note: 'A good day.',
         createdAt: now,
         updatedAt: now,
       );
@@ -45,11 +56,13 @@ void main() {
       await repository.saveEntries([entry]);
       await repository.saveCategories([category]);
       await repository.saveSettings(settings);
+      await repository.saveReflections([reflection]);
       await repository.saveLinkedCloudUserId('user-1');
 
       expect(repository.loadEntries().single.toJson(), entry.toJson());
       expect(repository.loadCategories().single.toJson(), category.toJson());
       expect(repository.loadSettings().toJson(), settings.toJson());
+      expect(repository.loadReflections().single.toJson(), reflection.toJson());
       expect(repository.loadLinkedCloudUserId(), 'user-1');
     },
   );
@@ -59,11 +72,13 @@ void main() {
       'hour_entries_v1': '{not json',
       'categories_v1': '{not json',
       'settings_v1': '{not json',
+      'daily_reflections_v1': '{not json',
     });
 
     expect(repository.loadEntries(), isEmpty);
     expect(repository.loadCategories().length, defaultCategories.length);
     expect(repository.loadSettings().remindersEnabled, isFalse);
+    expect(repository.loadReflections(), isEmpty);
   });
 
   test('valid JSON with an unexpected shape cannot crash startup', () async {

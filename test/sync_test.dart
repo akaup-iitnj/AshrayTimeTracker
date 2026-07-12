@@ -198,6 +198,34 @@ void main() {
     expect(store.settings.reminderEndHour, 22);
   });
 
+  test('a newer cloud reflection is merged and retained', () async {
+    final now = DateTime.now().toUtc();
+    final cloud = FakeCloudRepository(
+      remote: CloudSnapshot(
+        categories: const [],
+        entries: const [],
+        settings: null,
+        reflections: [
+          DailyReflection(
+            date: '2026-07-11',
+            mood: 2,
+            energy: 1,
+            calm: 2,
+            note: 'A difficult day.',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+      ),
+    );
+    final store = await createStore(cloud);
+
+    await store.synchronize();
+
+    expect(store.reflectionFor(DateTime(2026, 7, 11))?.mood, 2);
+    expect(cloud.pushed?.reflections.single.note, 'A difficult day.');
+  });
+
   test('a failed sync preserves local data and a retry recovers', () async {
     final cloud = FakeCloudRepository(signedIn: false);
     final store = await createStore(cloud);

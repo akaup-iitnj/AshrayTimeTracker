@@ -10,6 +10,7 @@ class LocalRepository {
   static const _entriesKey = 'hour_entries_v1';
   static const _categoriesKey = 'categories_v1';
   static const _settingsKey = 'settings_v1';
+  static const _reflectionsKey = 'daily_reflections_v1';
   static const _cloudUserKey = 'linked_cloud_user_v1';
 
   final SharedPreferences _preferences;
@@ -67,6 +68,23 @@ class LocalRepository {
     }
   }
 
+  List<DailyReflection> loadReflections() {
+    final raw = _preferences.getString(_reflectionsKey);
+    if (raw == null) return <DailyReflection>[];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map(
+            (item) => DailyReflection.fromJson(
+              Map<String, Object?>.from(item as Map<dynamic, dynamic>),
+            ),
+          )
+          .toList();
+    } on Object {
+      return <DailyReflection>[];
+    }
+  }
+
   String? loadLinkedCloudUserId() => _preferences.getString(_cloudUserKey);
 
   Future<void> saveLinkedCloudUserId(String userId) async {
@@ -96,5 +114,14 @@ class LocalRepository {
 
   Future<void> saveSettings(AppSettings settings) async {
     await _preferences.setString(_settingsKey, jsonEncode(settings.toJson()));
+  }
+
+  Future<void> saveReflections(Iterable<DailyReflection> reflections) async {
+    final ordered = reflections.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+    await _preferences.setString(
+      _reflectionsKey,
+      jsonEncode(ordered.map((reflection) => reflection.toJson()).toList()),
+    );
   }
 }

@@ -75,7 +75,7 @@ async function main(): Promise<void> {
 
   const reader = new DashboardSnapshotReader(async (parameters) => {
     const { data, error } = await supabase.rpc(
-      'time_tracker_dashboard_snapshot',
+      'time_tracker_dashboard_snapshot_v2',
       parameters,
     );
     return {
@@ -102,7 +102,7 @@ async function main(): Promise<void> {
     {
       title: 'Get Time Tracker dashboard snapshot',
       description:
-        'Returns entries, categories, daily completion, category totals, and settings for the signed-in Time Tracker user.',
+        'Returns entries, categories, daily completion, wellbeing reflections, category totals, and settings for the signed-in Time Tracker user.',
       inputSchema: {
         start_date: dateField.default(defaults.startDate),
         end_date: dateField.default(defaults.endDate),
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
     {
       title: 'Get Time Tracker summary',
       description:
-        'Returns daily completion and category totals for a dashboard date range.',
+        'Returns daily completion, wellbeing reflections, and category totals for a dashboard date range.',
       inputSchema: {
         start_date: dateField.default(defaults.startDate),
         end_date: dateField.default(defaults.endDate),
@@ -172,6 +172,7 @@ async function main(): Promise<void> {
           range: snapshot.range,
           daily_completion: snapshot.daily_completion,
           category_summary: snapshot.category_summary,
+          daily_reflections: snapshot.daily_reflections,
         };
       }),
   );

@@ -14,6 +14,7 @@ class AppStore extends ChangeNotifier {
     this._cloud,
     this._entries,
     this._categories,
+    this._reflections,
     this._settings,
     this._linkedCloudUserId,
   ) {
@@ -25,6 +26,7 @@ class AppStore extends ChangeNotifier {
   final CloudRepository? _cloud;
   final Map<String, HourEntry> _entries;
   final List<TimeCategory> _categories;
+  final Map<String, DailyReflection> _reflections;
   AppSettings _settings;
   String? _linkedCloudUserId;
   StreamSubscription<void>? _authSubscription;
@@ -41,6 +43,7 @@ class AppStore extends ChangeNotifier {
     final legacyTimestamp = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     final loadedEntries = repository.loadEntries();
     final loadedCategories = repository.loadCategories();
+    final loadedReflections = repository.loadReflections();
     final loadedSettings = repository.loadSettings();
 
     final entries = [
@@ -76,6 +79,8 @@ class AppStore extends ChangeNotifier {
             remindersEnabled: loadedSettings.remindersEnabled,
             reminderStartHour: loadedSettings.reminderStartHour,
             reminderEndHour: loadedSettings.reminderEndHour,
+            morningVideosEnabled: loadedSettings.morningVideosEnabled,
+            morningVideosHour: loadedSettings.morningVideosHour,
             timezone: loadedSettings.timezone,
             createdAt: loadedSettings.createdAt ?? legacyTimestamp,
             updatedAt: loadedSettings.updatedAt ?? legacyTimestamp,
@@ -101,6 +106,9 @@ class AppStore extends ChangeNotifier {
       cloud,
       <String, HourEntry>{for (final entry in entries) entry.id: entry},
       categories,
+      <String, DailyReflection>{
+        for (final reflection in loadedReflections) reflection.date: reflection,
+      },
       settings,
       repository.loadLinkedCloudUserId(),
     );
@@ -112,6 +120,7 @@ class AppStore extends ChangeNotifier {
   AppSettings get settings => _settings;
   ReminderScheduler get reminders => _reminders;
   Iterable<HourEntry> get allEntries => _entries.values;
+  Iterable<DailyReflection> get allReflections => _reflections.values;
 
   bool get cloudAvailable => _cloud != null;
   bool get isCloudSignedIn => _cloud?.isSignedIn ?? false;
@@ -159,6 +168,33 @@ class AppStore extends ChangeNotifier {
   int categoryUsageCount(String categoryId) => _entries.values
       .where((entry) => !entry.isDeleted && entry.categoryId == categoryId)
       .length;
+
+  DailyReflection? reflectionFor(DateTime date) => _reflections[dateKey(date)];
+
+  Future<void> saveReflection({
+    required DateTime date,
+    required int mood,
+    required int energy,
+    required int calm,
+    required String note,
+  }) async {
+    if ([mood, energy, calm].any((score) => score < 1 || score > 5)) return;
+    final key = dateKey(date);
+    final existing = _reflections[key];
+    final now = DateTime.now().toUtc();
+    _reflections[key] = DailyReflection(
+      date: key,
+      mood: mood,
+      energy: energy,
+      calm: calm,
+      note: note.trim(),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    );
+    notifyListeners();
+    await _repository.saveReflections(_reflections.values);
+    _queueSync();
+  }
 
   Future<void> saveEntry({
     required DateTime date,
@@ -303,6 +339,28 @@ class AppStore extends ChangeNotifier {
     _queueSync();
   }
 
+  Future<bool> setMorningVideosEnabled(bool enabled) async {
+    if (enabled) {
+      final granted = await _reminders.requestPermission();
+      if (!granted) return false;
+    }
+    _settings = _settings.copyWith(morningVideosEnabled: enabled);
+    notifyListeners();
+    await _repository.saveSettings(_settings);
+    await _reminders.sync(_settings, _entries.values);
+    _queueSync();
+    return true;
+  }
+
+  Future<void> updateMorningVideosHour(int hour) async {
+    if (hour < 0 || hour > 23) return;
+    _settings = _settings.copyWith(morningVideosHour: hour);
+    notifyListeners();
+    await _repository.saveSettings(_settings);
+    await _reminders.sync(_settings, _entries.values);
+    _queueSync();
+  }
+
   Future<CloudAuthResult> signUp(String email, String password) async {
     final cloud = _requireCloud();
     final result = await cloud.signUp(email, password);
@@ -354,17 +412,26 @@ class AppStore extends ChangeNotifier {
           remote.categories,
         );
         final mergedEntries = _mergeEntries(_entries.values, remote.entries);
+        final mergedReflections = _mergeReflections(
+          _reflections.values,
+          remote.reflections,
+        );
         final mergedSettings = _newerSettings(_settings, remote.settings);
         final mergedSnapshot = CloudSnapshot(
           categories: mergedCategories,
           entries: mergedEntries,
           settings: mergedSettings,
+          reflections: mergedReflections,
         );
         await cloud.pushSnapshot(mergedSnapshot);
 
         // Preserve edits made while the network request was in progress.
         final finalCategories = _mergeCategories(mergedCategories, _categories);
         final finalEntries = _mergeEntries(mergedEntries, _entries.values);
+        final finalReflections = _mergeReflections(
+          mergedReflections,
+          _reflections.values,
+        );
         final finalSettings = _newerSettings(mergedSettings, _settings);
         _categories
           ..clear()
@@ -372,11 +439,19 @@ class AppStore extends ChangeNotifier {
         _entries
           ..clear()
           ..addEntries(finalEntries.map((entry) => MapEntry(entry.id, entry)));
+        _reflections
+          ..clear()
+          ..addEntries(
+            finalReflections.map(
+              (reflection) => MapEntry(reflection.date, reflection),
+            ),
+          );
         _settings = finalSettings;
         await Future.wait([
           _repository.saveCategories(_categories),
           _repository.saveEntries(_entries.values),
           _repository.saveSettings(_settings),
+          _repository.saveReflections(_reflections.values),
         ]);
         await _reminders.sync(_settings, _entries.values);
         _lastSyncAt = DateTime.now();
@@ -464,6 +539,20 @@ List<HourEntry> _mergeEntries(
     final existing = merged[entry.id];
     if (existing == null || entry.updatedAt.isAfter(existing.updatedAt)) {
       merged[entry.id] = entry;
+    }
+  }
+  return merged.values.toList();
+}
+
+List<DailyReflection> _mergeReflections(
+  Iterable<DailyReflection> first,
+  Iterable<DailyReflection> second,
+) {
+  final merged = <String, DailyReflection>{};
+  for (final reflection in [...first, ...second]) {
+    final existing = merged[reflection.date];
+    if (existing == null || reflection.updatedAt.isAfter(existing.updatedAt)) {
+      merged[reflection.date] = reflection;
     }
   }
   return merged.values.toList();

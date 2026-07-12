@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Time Tracker publishes one versioned, read-only dashboard snapshot through Supabase. Any future dashboard can sign in as the same user, fetch the snapshot, and subscribe to change notifications. An optional local MCP server wraps that identical contract for AI clients.
+Time Tracker publishes versioned, read-only dashboard snapshots through Supabase. Any future dashboard can sign in as the same user, fetch the current v2 snapshot, and subscribe to change notifications. An optional local MCP server wraps that identical contract for AI clients.
 
 ```text
 Android / Windows Time Tracker
@@ -11,7 +11,7 @@ Android / Windows Time Tracker
             v
 Supabase tables protected by RLS
             |
-            +--> time_tracker_dashboard_snapshot RPC --> Dashboard app
+            +--> time_tracker_dashboard_snapshot_v2 RPC --> Dashboard app
             |                                         (same user session)
             |
             +--> Postgres Changes --> refetch snapshot automatically
@@ -30,13 +30,13 @@ Supabase remains the source of truth. The dashboard and MCP server do not mainta
 - Never place the Supabase secret or service-role key in a dashboard, desktop app, MCP configuration, or repository. It bypasses RLS.
 - The integration is read-only. It exposes no MCP mutation tools.
 
-## Version 1 snapshot
+## Version 2 snapshot
 
 Call:
 
 ```ts
 const { data, error } = await supabase.rpc(
-  'time_tracker_dashboard_snapshot',
+  'time_tracker_dashboard_snapshot_v2',
   {
     p_start_date: '2026-07-01',
     p_end_date: '2026-07-31',
@@ -46,7 +46,7 @@ const { data, error } = await supabase.rpc(
 
 The inclusive range can cover at most 367 days. The response contains:
 
-- `schema_version`: currently `1`.
+- `schema_version`: currently `2`.
 - `source`: `time_tracker`.
 - `generated_at`: server timestamp.
 - `range`: requested dates and number of days.
@@ -54,7 +54,10 @@ The inclusive range can cover at most 367 days. The response contains:
 - `categories`: active categories in display order.
 - `daily_completion`: all requested days, including zero-hour days.
 - `category_summary`: hours and percentage by category.
-- `settings`: reminder window and timezone.
+- `settings`: hourly reminder window, morning-video preference, and timezone.
+- `daily_reflections`: mood, energy, calm, reflection text, and update time.
+
+Version 1 remains available for compatibility but does not include wellbeing data or morning-video settings.
 
 Deleted entries and categories are not exposed. Tasks whose category was deleted remain visible as `Uncategorized`.
 
@@ -80,12 +83,12 @@ After authentication, every RPC and realtime subscription carries the user's JWT
 
 ## Automatic dashboard refresh
 
-Migration `002_dashboard_integration.sql` adds the three source tables to the `supabase_realtime` publication. Treat realtime events as an invalidation signal and refetch the snapshot:
+Migrations `002_dashboard_integration.sql` and `003_wellbeing_and_morning_videos.sql` add the four source tables to the `supabase_realtime` publication. Treat realtime events as an invalidation signal and refetch the snapshot:
 
 ```ts
 async function refreshTimeTracker() {
   const { data, error } = await supabase.rpc(
-    'time_tracker_dashboard_snapshot',
+    'time_tracker_dashboard_snapshot_v2',
     {
       p_start_date: rangeStart,
       p_end_date: rangeEnd,
@@ -126,6 +129,16 @@ const channel = supabase
       event: '*',
       schema: 'public',
       table: 'user_settings',
+      filter: `user_id=eq.${user.id}`,
+    },
+    refreshTimeTracker,
+  )
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'daily_reflections',
       filter: `user_id=eq.${user.id}`,
     },
     refreshTimeTracker,
@@ -189,4 +202,4 @@ If this later becomes a hosted MCP service for multiple clients, add Streamable 
 - Additive fields can be introduced without changing `schema_version`.
 - Renaming or removing fields requires a new RPC and a new schema version.
 - Dashboard clients should reject unsupported versions instead of silently misreading data.
-- The MCP adapter validates version `1` before returning tool results.
+- The MCP adapter validates version `2` before returning tool results.

@@ -18,6 +18,8 @@ The version 0.4 reliability milestone adds CSV backup, persistence recovery, exp
 
 The dashboard integration layer adds a versioned, read-only Supabase snapshot, realtime invalidation events, and an optional stdio MCP adapter. A future dashboard can use the same Supabase account and show Time Tracker updates without maintaining a second data store.
 
+The wellbeing foundation adds a daily mood, energy, and calm check-in, long-form reflection text, and a configurable morning-video reminder. Sleep import will use Android Health Connect so Samsung Health and other compatible watch apps can remain the data providers.
+
 ## Core User Story
 
 Every hour, the app prompts the user to answer one question: "What did I do in the last hour?"
@@ -275,6 +277,9 @@ Current status: CSV export, category colors, the donut chart, empty report state
 10. [x] Add expanded sync, persistence, account, and UI tests.
 11. [x] Add native smoke testing and GitHub Actions for Android and Windows.
 12. [x] Add a versioned dashboard API, realtime refresh, and read-only MCP adapter.
+13. [x] Add morning videos and the daily wellbeing check-in foundation.
+14. [ ] Import completed sleep sessions from Android Health Connect.
+15. [ ] Add private voice recording and opt-in transcription.
 
 ## Product Principles
 

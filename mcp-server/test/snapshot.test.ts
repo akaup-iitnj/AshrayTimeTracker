@@ -8,7 +8,7 @@ import {
 } from '../src/snapshot.js';
 
 const sampleSnapshot = {
-  schema_version: 1,
+  schema_version: 2,
   source: 'time_tracker',
   generated_at: '2026-07-11T12:00:00Z',
   range: {
@@ -50,10 +50,22 @@ const sampleSnapshot = {
       percentage: 100,
     },
   ],
+  daily_reflections: [
+    {
+      date: '2026-07-10',
+      mood: 4,
+      energy: 3,
+      calm: 4,
+      note: 'A productive and grounded day.',
+      updated_at: '2026-07-10T22:00:00Z',
+    },
+  ],
   settings: {
     reminders_enabled: true,
     reminder_start_hour: 8,
     reminder_end_hour: 23,
+    morning_videos_enabled: true,
+    morning_videos_hour: 8,
     timezone: 'America/New_York',
     updated_at: '2026-07-10T14:00:00Z',
   },
@@ -95,7 +107,7 @@ test('fetches and validates the versioned dashboard snapshot', async () => {
     p_start_date: '2026-07-10',
     p_end_date: '2026-07-11',
   });
-  assert.equal(snapshot.schema_version, 1);
+  assert.equal(snapshot.schema_version, 2);
   assert.equal(snapshot.entries[0]?.task, 'Build dashboard API');
 });
 
@@ -113,7 +125,7 @@ test('surfaces database errors without returning partial data', async () => {
 
 test('rejects snapshots from an incompatible schema version', async () => {
   const reader = new DashboardSnapshotReader(async () => ({
-    data: { ...sampleSnapshot, schema_version: 2 },
+    data: { ...sampleSnapshot, schema_version: 3 },
     error: null,
   }));
 

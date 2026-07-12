@@ -45,12 +45,23 @@ const settingsSchema = z.object({
   reminders_enabled: z.boolean(),
   reminder_start_hour: z.number().int().min(0).max(23),
   reminder_end_hour: z.number().int().min(1).max(24),
+  morning_videos_enabled: z.boolean(),
+  morning_videos_hour: z.number().int().min(0).max(23),
   timezone: z.string(),
   updated_at: z.string().nullable(),
 });
 
+const dailyReflectionSchema = z.object({
+  date: z.string().regex(datePattern),
+  mood: z.number().int().min(1).max(5),
+  energy: z.number().int().min(1).max(5),
+  calm: z.number().int().min(1).max(5),
+  note: z.string(),
+  updated_at: z.string(),
+});
+
 export const dashboardSnapshotSchema = z.object({
-  schema_version: z.literal(1),
+  schema_version: z.literal(2),
   source: z.literal('time_tracker'),
   generated_at: z.string(),
   range: rangeSchema,
@@ -58,6 +69,7 @@ export const dashboardSnapshotSchema = z.object({
   categories: z.array(categorySchema),
   daily_completion: z.array(dailyCompletionSchema),
   category_summary: z.array(categorySummarySchema),
+  daily_reflections: z.array(dailyReflectionSchema),
   settings: settingsSchema,
 });
 

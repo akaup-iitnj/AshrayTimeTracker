@@ -6,9 +6,11 @@ import 'app_store.dart';
 import 'csv_export.dart';
 import 'edit_hour_screen.dart';
 import 'models.dart';
+import 'morning_videos_screen.dart';
 import 'report_screen.dart';
 import 'settings_screen.dart';
 import 'today_screen.dart';
+import 'wellbeing_screen.dart';
 
 class TimeTrackerApp extends StatelessWidget {
   const TimeTrackerApp({
@@ -83,13 +85,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.store.reminders.reminderTaps.addListener(_handleReminderTap);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleReminderTap());
+    widget.store.reminders.morningVideoTaps.addListener(_handleMorningVideoTap);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleReminderTap();
+      _handleMorningVideoTap();
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.store.reminders.reminderTaps.removeListener(_handleReminderTap);
+    widget.store.reminders.morningVideoTaps.removeListener(
+      _handleMorningVideoTap,
+    );
     super.dispose();
   }
 
@@ -122,6 +131,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     });
   }
 
+  void _handleMorningVideoTap() {
+    if (!mounted || !widget.store.reminders.consumeMorningVideoTap()) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const MorningVideosScreen()),
+      );
+    });
+  }
+
   void _setDate(DateTime date) {
     setState(() => _selectedDate = dayOnly(date));
   }
@@ -140,6 +159,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         label: 'Report',
       ),
       const NavigationDestination(
+        icon: Icon(Icons.favorite_outline),
+        selectedIcon: Icon(Icons.favorite),
+        label: 'Check-in',
+      ),
+      const NavigationDestination(
         icon: Icon(Icons.tune_outlined),
         selectedIcon: Icon(Icons.tune),
         label: 'Settings',
@@ -152,6 +176,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onDateChanged: _setDate,
       ),
       ReportScreen(
+        store: widget.store,
+        date: _selectedDate,
+        onDateChanged: _setDate,
+      ),
+      WellbeingScreen(
         store: widget.store,
         date: _selectedDate,
         onDateChanged: _setDate,

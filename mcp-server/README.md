@@ -1,6 +1,6 @@
 # Time Tracker MCP adapter
 
-This package exposes the read-only `time_tracker_dashboard_snapshot` Supabase RPC as MCP tools over stdio.
+This package exposes the read-only `time_tracker_dashboard_snapshot_v2` Supabase RPC as MCP tools over stdio, including daily wellbeing reflections.
 
 ```powershell
 npm ci
