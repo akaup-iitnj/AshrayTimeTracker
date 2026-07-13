@@ -34,10 +34,14 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(() => _formError = 'Enter a valid email address.');
       return;
     }
-    if (password.length < 6) {
+    if (_creatingAccount && password.length < 12) {
       setState(
-        () => _formError = 'Use at least 6 characters for the password.',
+        () => _formError = 'Use at least 12 characters for the password.',
       );
+      return;
+    }
+    if (!_creatingAccount && password.isEmpty) {
+      setState(() => _formError = 'Enter your password.');
       return;
     }
 

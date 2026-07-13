@@ -104,6 +104,12 @@ CsvExportData buildCsvExport(AppStore store, {DateTime? generatedAt}) {
 String _csvRow(Iterable<Object?> cells) => cells.map(_csvCell).join(',');
 
 String _csvCell(Object? value) {
-  final text = value?.toString() ?? '';
+  var text = value?.toString() ?? '';
+  // Spreadsheet applications may execute strings beginning with these
+  // characters as formulas. Preserve the visible value while forcing imported
+  // user-authored text to be treated as text.
+  if (value is String && RegExp(r'^[\t\r\n ]*[=+\-@]').hasMatch(text)) {
+    text = "'$text";
+  }
   return '"${text.replaceAll('"', '""')}"';
 }

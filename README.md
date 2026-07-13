@@ -87,6 +87,16 @@ To check the app version from PowerShell:
 
 The current result is `version: 0.4.0+4`—version 0.4.0, Android build 4.
 
+## Security and release signing
+
+The checked-in Supabase publishable key identifies the public client and is not an administrator credential. Database row-level security and explicit grants keep each signed-in user's records private. Never add a Supabase `service_role` or secret key, access or refresh tokens, `.env` files, or Android keystores to this repository.
+
+Debug APKs are only for development. Before distributing a release APK, generate a unique Android upload keystore, copy `android/key.properties.example` to `android/key.properties`, and replace every placeholder. Both the properties file and keystore formats are ignored by Git.
+
+CSV exports neutralize formula-like task and category text before a spreadsheet opens them. Dashboard and MCP consumers must likewise render task and reflection fields as untrusted plain text, never as HTML or instructions.
+
+See `SECURITY.md` for private vulnerability reporting. GitHub CI scans the complete Git history for secrets and checks both locked dependency graphs for known advisories.
+
 ## Reminder behavior
 
 The reminder window describes hours to catalog. With the default `8am–11pm` window, a prompt arrives after each hour in that range. Tapping a notification opens the editor for that exact hour. The app schedules a rolling 14-day window when it opens and cancels the prompt for an hour as soon as that hour is completed.
@@ -120,8 +130,10 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `supabase/migrations/001_initial_schema.sql` — Phase 2 tables and ownership policies.
 - `supabase/migrations/002_dashboard_integration.sql` — versioned dashboard RPC and realtime publication.
 - `supabase/migrations/003_wellbeing_and_morning_videos.sql` — daily reflections, morning settings, and dashboard v2.
+- `supabase/migrations/004_security_hardening.sql` — explicit table and RPC least-privilege grants.
 - `mcp-server/` — read-only stdio MCP adapter for AI clients.
 - `.github/workflows/flutter.yml` — Android and Windows continuous integration.
+- `.github/workflows/security.yml` — full-history secret and locked-dependency scans.
 
 ## Use Phase 2
 

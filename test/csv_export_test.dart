@@ -74,4 +74,28 @@ void main() {
       expect(data.contents, isNot(contains('Remove this hour')));
     },
   );
+
+  test('CSV export neutralizes spreadsheet formulas in user text', () async {
+    final dangerousValues = <String>[
+      '=HYPERLINK("https://example.test")',
+      '+cmd|calc',
+      '-1+2',
+      '@SUM(1,2)',
+      '  =1+1',
+    ];
+
+    for (var index = 0; index < dangerousValues.length; index++) {
+      final store = await createStore();
+      await store.saveEntry(
+        date: DateTime(2026, 7, 11),
+        hourStart: index,
+        task: dangerousValues[index],
+        categoryId: 'work',
+      );
+
+      final data = buildCsvExport(store, generatedAt: DateTime(2026, 7, 11));
+      final escaped = dangerousValues[index].trim().replaceAll('"', '""');
+      expect(data.contents, contains('"\'$escaped"'));
+    }
+  });
 }
