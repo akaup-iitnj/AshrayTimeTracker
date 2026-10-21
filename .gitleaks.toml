@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SharedPreferences storage key identifiers"
+regexTarget = "match"
+regexes = [
+  '''categories_v1''',
+  '''daily_reflections_v1''',
+]

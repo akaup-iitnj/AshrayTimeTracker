@@ -1,0 +1,29 @@
+{
+  "name": "time-tracker-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only MCP adapter for the Time Tracker dashboard integration API.",
+  "type": "module",
+  "bin": {
+    "time-tracker-mcp": "build/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/src/index.js",
+    "test": "tsx --test test/**/*.test.ts",
+    "check": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@supabase/supabase-js": "^2.110.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  }
+}

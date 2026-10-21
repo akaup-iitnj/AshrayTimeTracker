@@ -1,0 +1,55 @@
+name: Security scans
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets-and-vulnerabilities:
+    name: Secrets and dependency vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install verified Gitleaks
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            --output gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
+          echo 'a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb  gitleaks.tar.gz' | sha256sum --check
+          tar -xzf gitleaks.tar.gz gitleaks
+
+      - name: Scan full Git history for secrets
+        run: ./gitleaks git . --no-banner --redact
+
+      - name: Install verified OSV-Scanner
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            --output osv-scanner \
+            https://github.com/google/osv-scanner/releases/download/v2.3.8/osv-scanner_linux_amd64
+          echo 'bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc  osv-scanner' | sha256sum --check
+          chmod +x osv-scanner
+
+      - name: Scan locked dependencies
+        run: >-
+          ./osv-scanner scan source
+          -L pubspec.lock
+          -L mcp-server/package-lock.json
