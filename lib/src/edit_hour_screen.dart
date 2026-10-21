@@ -23,13 +23,18 @@ class EditHourScreen extends StatefulWidget {
 class _EditHourScreenState extends State<EditHourScreen> {
   late final TextEditingController _taskController;
   String? _categoryId;
+  bool? _productive;
   bool _saving = false;
 
   HourEntry? get _existing =>
       widget.store.entryFor(widget.date, widget.hourStart);
 
+  // A full log needs a task and a category; a productive rating alone is
+  // also enough, matching what the notification buttons record.
   bool get _canSave =>
-      !_saving && _taskController.text.trim().isNotEmpty && _categoryId != null;
+      !_saving &&
+      (_productive != null ||
+          (_taskController.text.trim().isNotEmpty && _categoryId != null));
 
   @override
   void initState() {
@@ -38,6 +43,7 @@ class _EditHourScreenState extends State<EditHourScreen> {
     _taskController = TextEditingController(text: existing?.task ?? '')
       ..addListener(_refresh);
     _categoryId = existing?.categoryId;
+    _productive = existing?.productive;
   }
 
   @override
@@ -57,7 +63,8 @@ class _EditHourScreenState extends State<EditHourScreen> {
       date: widget.date,
       hourStart: widget.hourStart,
       task: _taskController.text,
-      categoryId: _categoryId!,
+      categoryId: _categoryId,
+      productive: _productive,
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -182,6 +189,38 @@ class _EditHourScreenState extends State<EditHourScreen> {
                       onPressed: _addCategory,
                     ),
                   ],
+                ),
+                const SizedBox(height: 26),
+                Text(
+                  'Was it productive?',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(
+                      value: true,
+                      label: Text('Productive'),
+                      icon: Icon(Icons.thumb_up_alt_outlined),
+                    ),
+                    ButtonSegment(
+                      value: false,
+                      label: Text('Not productive'),
+                      icon: Icon(Icons.thumb_down_alt_outlined),
+                    ),
+                  ],
+                  selected: {?_productive},
+                  emptySelectionAllowed: true,
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    setState(
+                      () => _productive = selection.isEmpty
+                          ? null
+                          : selection.first,
+                    );
+                  },
                 ),
                 const SizedBox(height: 34),
                 FilledButton.icon(

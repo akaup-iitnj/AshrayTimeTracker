@@ -37,11 +37,41 @@ void main() {
     await tester.tap(find.text('Work'));
     await tester.pump();
     await tester.ensureVisible(find.text('Save hour'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save hour'));
     await tester.pumpAndSettle();
 
     expect(find.text('Project planning'), findsOneWidget);
     expect(find.text('1 / 24 logged'), findsOneWidget);
+  });
+
+  testWidgets('saves an hour with only a productive rating', (tester) async {
+    final store = await createTestStore();
+    await tester.pumpWidget(TimeTrackerApp(store: store));
+
+    await tester.tap(find.text('Tap to add what you did').first);
+    await tester.pumpAndSettle();
+    final saveButton = find.widgetWithText(FilledButton, 'Save hour');
+    await tester.dragUntilVisible(
+      saveButton,
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+
+    await tester.tap(find.text('Not productive'));
+    await tester.pump();
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    final entry = store.entryFor(DateTime.now(), 0);
+    expect(entry?.productive, isFalse);
+    expect(entry?.task, isEmpty);
+    expect(entry?.categoryId, isNull);
+    expect(find.text('Not productive'), findsOneWidget);
+    expect(find.text('0 / 24 logged'), findsOneWidget);
   });
 
   testWidgets('opens a month calendar from the day header', (tester) async {
@@ -91,6 +121,12 @@ void main() {
     await tester.tap(find.text('Initial task'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Edited task');
+    await tester.dragUntilVisible(
+      find.text('Save hour'),
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save hour'));
     await tester.pumpAndSettle();
 

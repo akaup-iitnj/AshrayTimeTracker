@@ -1,15 +1,71 @@
+import 'dart:isolate';
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'local_repository.dart';
 import 'models.dart';
+
+const _productiveActionId = 'rate_productive';
+const _unproductiveActionId = 'rate_unproductive';
+const _ratingPortName = 'time_tracker_quick_ratings';
+
+/// Handles the Productive / Not productive buttons on an hourly reminder.
+/// Android runs this in a separate background isolate, even when the app is
+/// open, so it only queues the rating and pings the main isolate if it exists.
+@pragma('vm:entry-point')
+Future<void> onReminderActionInBackground(NotificationResponse response) async {
+  DartPluginRegistrant.ensureInitialized();
+  if (!await _queueRating(response)) return;
+  IsolateNameServer.lookupPortByName(_ratingPortName)?.send(null);
+}
+
+Future<bool> _queueRating(NotificationResponse response) async {
+  final productive = switch (response.actionId) {
+    _productiveActionId => true,
+    _unproductiveActionId => false,
+    _ => null,
+  };
+  final target = ReminderTarget.fromPayload(response.payload);
+  if (productive == null || target == null) return false;
+  await LocalRepository.queueQuickRating(
+    QuickRating(
+      date: dateKey(target.date),
+      hourStart: target.hourStart,
+      productive: productive,
+      ratedAt: DateTime.now().toUtc(),
+    ),
+  );
+  return true;
+}
+
+const _hourlyDetails = NotificationDetails(
+  android: AndroidNotificationDetails(
+    'hourly_reminders',
+    'Hourly reminders',
+    channelDescription: 'Prompts you to log the hour that just ended.',
+    icon: 'ic_notification',
+    importance: Importance.high,
+    priority: Priority.high,
+    actions: [
+      AndroidNotificationAction(_productiveActionId, 'Productive'),
+      AndroidNotificationAction(_unproductiveActionId, 'Not productive'),
+    ],
+  ),
+);
 
 abstract class ReminderScheduler {
   bool get isSupported;
   ValueListenable<ReminderTarget?> get reminderTaps;
   ValueListenable<bool> get morningVideoTaps;
+
+  /// Fires when a notification action has queued a quick rating.
+  Listenable get quickRatingsQueued;
 
   Future<void> initialize();
   ReminderTarget? consumeReminderTap();
@@ -24,6 +80,7 @@ class LocalReminderService implements ReminderScheduler {
       FlutterLocalNotificationsPlugin();
   final ValueNotifier<ReminderTarget?> _reminderTaps = ValueNotifier(null);
   final ValueNotifier<bool> _morningVideoTaps = ValueNotifier(false);
+  final ValueNotifier<int> _quickRatingsQueued = ValueNotifier(0);
   bool _initialized = false;
 
   @override
@@ -37,8 +94,19 @@ class LocalReminderService implements ReminderScheduler {
   ValueListenable<bool> get morningVideoTaps => _morningVideoTaps;
 
   @override
+  Listenable get quickRatingsQueued => _quickRatingsQueued;
+
+  @override
   Future<void> initialize() async {
     if (!isSupported || _initialized) return;
+
+    final ratingPort = ReceivePort();
+    IsolateNameServer.removePortNameMapping(_ratingPortName);
+    IsolateNameServer.registerPortWithName(
+      ratingPort.sendPort,
+      _ratingPortName,
+    );
+    ratingPort.listen((_) => _quickRatingsQueued.value++);
 
     tz_data.initializeTimeZones();
     try {
@@ -52,13 +120,19 @@ class LocalReminderService implements ReminderScheduler {
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('ic_notification'),
       ),
-      onDidReceiveNotificationResponse: (response) {
+      onDidReceiveNotificationResponse: (response) async {
+        if (response.actionId != null) {
+          if (await _queueRating(response)) _quickRatingsQueued.value++;
+          return;
+        }
         _handlePayload(response.payload);
       },
+      onDidReceiveBackgroundNotificationResponse: onReminderActionInBackground,
     );
 
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
-    if (launchDetails?.didNotificationLaunchApp ?? false) {
+    if ((launchDetails?.didNotificationLaunchApp ?? false) &&
+        launchDetails?.notificationResponse?.actionId == null) {
       _handlePayload(launchDetails?.notificationResponse?.payload);
     }
     _initialized = true;
@@ -135,20 +209,10 @@ class LocalReminderService implements ReminderScheduler {
           await _plugin.zonedSchedule(
             id: _notificationId(date, hour),
             scheduledDate: trigger,
-            title: 'Log your last hour',
-            body: 'What did you do from ${hourLabel(hour)}?',
+            title: 'Was ${hourLabel(hour)} productive?',
+            body: 'Tap to add what you did.',
             payload: target.payload,
-            notificationDetails: const NotificationDetails(
-              android: AndroidNotificationDetails(
-                'hourly_reminders',
-                'Hourly reminders',
-                channelDescription:
-                    'Prompts you to log the hour that just ended.',
-                icon: 'ic_notification',
-                importance: Importance.high,
-                priority: Priority.high,
-              ),
-            ),
+            notificationDetails: _hourlyDetails,
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           );
         }
@@ -186,6 +250,25 @@ class LocalReminderService implements ReminderScheduler {
     }
   }
 
+  /// Debug builds only: shows today's reminder for the hour written to the
+  /// app's `files/test_reminder_hour` (see README), then deletes the file.
+  Future<void> showDebugTestReminder() async {
+    if (!kDebugMode || !isSupported) return;
+    final hour = await const MethodChannel(
+      'time_tracker/debug',
+    ).invokeMethod<int>('takeTestReminderHour');
+    if (hour == null) return;
+    await initialize();
+    final today = dayOnly(DateTime.now());
+    await _plugin.show(
+      id: _notificationId(today, hour),
+      title: 'Was ${hourLabel(hour)} productive?',
+      body: 'Tap to add what you did.',
+      payload: ReminderTarget(date: today, hourStart: hour).payload,
+      notificationDetails: _hourlyDetails,
+    );
+  }
+
   @override
   Future<void> cancelForEntry(DateTime date, int hourStart) async {
     if (!isSupported || !_initialized) return;
@@ -203,6 +286,10 @@ class LocalReminderService implements ReminderScheduler {
 class NoopReminderScheduler implements ReminderScheduler {
   final ValueNotifier<ReminderTarget?> _taps = ValueNotifier(null);
   final ValueNotifier<bool> _morningTaps = ValueNotifier(false);
+  final ValueNotifier<int> _ratings = ValueNotifier(0);
+
+  @override
+  Listenable get quickRatingsQueued => _ratings;
 
   @override
   bool get isSupported => false;

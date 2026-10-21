@@ -27,6 +27,7 @@ class ReportScreen extends StatelessWidget {
           builder: (context, constraints) {
             final side = math.max(16.0, (constraints.maxWidth - 760) / 2);
             final report = store.reportFor(date);
+            final productivity = store.productivityFor(date);
             final slices =
                 report.entries
                     .map(
@@ -55,6 +56,14 @@ class ReportScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 DateNavigator(date: date, onDateChanged: onDateChanged),
                 const SizedBox(height: 24),
+                if (productivity.productive + productivity.unproductive >
+                    0) ...[
+                  _ProductivityCard(
+                    productive: productivity.productive,
+                    unproductive: productivity.unproductive,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 if (total == 0)
                   const _EmptyReport()
                 else ...[
@@ -127,6 +136,69 @@ class ReportScreen extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _ProductivityCard extends StatelessWidget {
+  const _ProductivityCard({
+    required this.productive,
+    required this.unproductive,
+  });
+
+  final int productive;
+  final int unproductive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final rated = productive + unproductive;
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: colors.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Productivity',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$productive of $rated rated '
+              '${rated == 1 ? 'hour' : 'hours'} productive',
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: Row(
+                children: [
+                  if (productive > 0)
+                    Expanded(
+                      flex: productive,
+                      child: Container(height: 10, color: colors.primary),
+                    ),
+                  if (unproductive > 0)
+                    Expanded(
+                      flex: unproductive,
+                      child: Container(
+                        height: 10,
+                        color: colors.error.withValues(alpha: 0.7),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

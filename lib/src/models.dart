@@ -62,6 +62,7 @@ class HourEntry {
     required this.task,
     required this.categoryId,
     required this.updatedAt,
+    this.productive,
     this.createdAt,
     this.deletedAt,
   });
@@ -70,6 +71,9 @@ class HourEntry {
   final int hourStart;
   final String task;
   final String? categoryId;
+
+  /// Quick yes/no rating, usually set from the reminder notification.
+  final bool? productive;
   final DateTime updatedAt;
   final DateTime? createdAt;
   final DateTime? deletedAt;
@@ -82,6 +86,7 @@ class HourEntry {
   HourEntry copyWith({
     String? task,
     String? categoryId,
+    bool? productive,
     DateTime? updatedAt,
     DateTime? createdAt,
     DateTime? deletedAt,
@@ -91,6 +96,7 @@ class HourEntry {
       hourStart: hourStart,
       task: task ?? this.task,
       categoryId: categoryId ?? this.categoryId,
+      productive: productive ?? this.productive,
       updatedAt: updatedAt ?? DateTime.now().toUtc(),
       createdAt: createdAt ?? this.createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -102,6 +108,7 @@ class HourEntry {
     'hourStart': hourStart,
     'task': task,
     'categoryId': categoryId,
+    'productive': productive,
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'deletedAt': deletedAt?.toIso8601String(),
@@ -113,6 +120,7 @@ class HourEntry {
       hourStart: json['hourStart']! as int,
       task: json['task']! as String,
       categoryId: json['categoryId'] as String?,
+      productive: json['productive'] as bool?,
       createdAt: _dateTimeFromJson(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']! as String).toUtc(),
       deletedAt: _dateTimeFromJson(json['deletedAt']),
@@ -246,6 +254,38 @@ class ReminderTarget {
     final hour = int.tryParse(parts.last);
     if (date == null || hour == null || hour < 0 || hour > 23) return null;
     return ReminderTarget(date: date, hourStart: hour);
+  }
+}
+
+/// A productive/unproductive answer given from a notification action, queued
+/// until the app's main isolate applies it to the hour's entry.
+class QuickRating {
+  const QuickRating({
+    required this.date,
+    required this.hourStart,
+    required this.productive,
+    required this.ratedAt,
+  });
+
+  final String date;
+  final int hourStart;
+  final bool productive;
+  final DateTime ratedAt;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'date': date,
+    'hourStart': hourStart,
+    'productive': productive,
+    'ratedAt': ratedAt.toIso8601String(),
+  };
+
+  factory QuickRating.fromJson(Map<String, Object?> json) {
+    return QuickRating(
+      date: json['date']! as String,
+      hourStart: json['hourStart']! as int,
+      productive: json['productive']! as bool,
+      ratedAt: DateTime.parse(json['ratedAt']! as String).toUtc(),
+    );
   }
 }
 

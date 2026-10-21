@@ -12,6 +12,7 @@ class LocalRepository {
   static const _settingsKey = 'settings_v1';
   static const _reflectionsKey = 'daily_reflections_v1';
   static const _cloudUserKey = 'linked_cloud_user_v1';
+  static const _pendingRatingsKey = 'pending_quick_ratings_v1';
 
   final SharedPreferences _preferences;
 
@@ -89,6 +90,44 @@ class LocalRepository {
 
   Future<void> saveLinkedCloudUserId(String userId) async {
     await _preferences.setString(_cloudUserKey, userId);
+  }
+
+  /// Queues a rating from a notification action. This runs in a background
+  /// isolate, so it writes its own key instead of touching the entry list the
+  /// main isolate keeps cached in memory.
+  static Future<void> queueQuickRating(QuickRating rating) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    final pending = _decodeRatings(preferences.getString(_pendingRatingsKey))
+      ..add(rating);
+    await preferences.setString(
+      _pendingRatingsKey,
+      jsonEncode(pending.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  /// Returns and clears ratings queued by notification actions.
+  Future<List<QuickRating>> takePendingRatings() async {
+    await _preferences.reload();
+    final pending = _decodeRatings(_preferences.getString(_pendingRatingsKey));
+    if (pending.isNotEmpty) await _preferences.remove(_pendingRatingsKey);
+    return pending;
+  }
+
+  static List<QuickRating> _decodeRatings(String? raw) {
+    if (raw == null) return <QuickRating>[];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map(
+            (item) => QuickRating.fromJson(
+              Map<String, Object?>.from(item as Map<dynamic, dynamic>),
+            ),
+          )
+          .toList();
+    } on Object {
+      return <QuickRating>[];
+    }
   }
 
   Future<void> saveEntries(Iterable<HourEntry> entries) async {

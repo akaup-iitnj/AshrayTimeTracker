@@ -28,6 +28,7 @@ void main() {
     await tester.pump();
     final saveButton = find.widgetWithText(FilledButton, 'Save hour');
     await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
     expect(find.text('End-to-end smoke entry'), findsOneWidget);

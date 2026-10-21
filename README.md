@@ -27,6 +27,7 @@ The Android MVP, cloud sync, and native Windows client are complete. Version 0.4
 - Offer optional MCP tools for snapshots, entries, and summaries.
 - Schedule a configurable morning reminder for two saved videos.
 - Record a private daily check-in with mood, energy, calm, and reflection text.
+- Rate an hour productive or not straight from its reminder, without opening the app.
 
 The Supabase project is configured and its Phase 2 migration has been applied. Open **Settings → Data → Cloud sync** to create an account or sign in.
 
@@ -101,6 +102,19 @@ See `SECURITY.md` for private vulnerability reporting. GitHub CI scans the compl
 
 The reminder window describes hours to catalog. With the default `8am–11pm` window, a prompt arrives after each hour in that range. Tapping a notification opens the editor for that exact hour. The app schedules a rolling 14-day window when it opens and cancels the prompt for an hour as soon as that hour is completed.
 
+Each reminder has **Productive** and **Not productive** buttons. Tapping one records the rating and dismisses the notification without opening the app. Android handles the tap in a background isolate, which queues the rating under its own preferences key; the app applies queued ratings at launch, on resume, and immediately if it is already running. A rating never overwrites an edit made after the button was tapped. Ratings also appear as a chip on the day view, in the hour editor, and as a productivity bar on the report.
+
+Ratings sync through the `productive` column added by `supabase/migrations/005_productive_rating.sql`. Until that migration is applied, sync continues without the column and ratings stay on the device.
+
+To preview a reminder on a debug build, write an hour (0–23) to the app's private files and launch it. The app shows that hour's reminder for today once and deletes the file:
+
+```powershell
+adb shell "run-as com.ashray.timetracker.hourly_time_tracker sh -c 'echo 18 > files/test_reminder_hour'"
+adb shell am start -n com.ashray.timetracker.hourly_time_tracker/.MainActivity
+```
+
+If the app is already running, close it first so the launch is a fresh start.
+
 Android uses inexact idle-safe alarms. This avoids asking for the more sensitive exact-alarm permission while remaining appropriate for hourly check-ins.
 
 ## Local data
@@ -131,6 +145,7 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 - `supabase/migrations/002_dashboard_integration.sql` — versioned dashboard RPC and realtime publication.
 - `supabase/migrations/003_wellbeing_and_morning_videos.sql` — daily reflections, morning settings, and dashboard v2.
 - `supabase/migrations/004_security_hardening.sql` — explicit table and RPC least-privilege grants.
+- `supabase/migrations/005_productive_rating.sql` — productive rating on hour entries.
 - `mcp-server/` — read-only stdio MCP adapter for AI clients.
 - `.github/workflows/flutter.yml` — Android and Windows continuous integration.
 - `.github/workflows/security.yml` — full-history secret and locked-dependency scans.
@@ -138,6 +153,16 @@ Entries, categories, and reminder preferences always use Flutter's cross-platfor
 ## Use Phase 2
 
 Install the version 0.4 APK, then open **Settings → Data → Cloud sync** and create an account. Email confirmation is enabled by default in hosted Supabase projects; after confirming, return to the app and sign in.
+
+## Use it in a browser
+
+The web build is published at <https://akaup-iitnj.github.io/AshrayTimeTracker/> by `.github/workflows/pages.yml` on every push to `main`. Sign in under **Settings → Data → Cloud sync** to load the same history as your phone. A browser has no hourly reminders, and anything logged before signing in stays in that browser's local storage.
+
+To build it locally:
+
+```powershell
+flutter build web --release --base-href /AshrayTimeTracker/
+```
 
 ## Run it on Windows
 

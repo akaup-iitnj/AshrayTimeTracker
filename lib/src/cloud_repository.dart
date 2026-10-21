@@ -40,6 +40,10 @@ class SupabaseCloudRepository implements CloudRepository {
 
   final SupabaseClient _client;
 
+  // Cleared when hour_entries has no productive column yet (migration 005 not
+  // applied), so ratings stay local instead of breaking the whole sync.
+  bool _remoteHasProductive = true;
+
   @override
   String? get currentUserId => _client.auth.currentUser?.id;
 
@@ -111,14 +115,15 @@ class SupabaseCloudRepository implements CloudRepository {
       ], onConflict: 'user_id,id');
     }
     if (snapshot.entries.isNotEmpty) {
-      await _client
-          .from('hour_entries')
-          .upsert(
-            snapshot.entries
-                .map((entry) => _entryToRemote(entry, userId))
-                .toList(),
-            onConflict: 'user_id,entry_date,hour_start',
-          );
+      try {
+        await _upsertEntries(snapshot.entries, userId);
+      } on PostgrestException catch (error) {
+        if (!_remoteHasProductive || !error.message.contains('productive')) {
+          rethrow;
+        }
+        _remoteHasProductive = false;
+        await _upsertEntries(snapshot.entries, userId);
+      }
     }
     if (snapshot.settings case final settings?) {
       await _client
@@ -135,6 +140,15 @@ class SupabaseCloudRepository implements CloudRepository {
             onConflict: 'user_id,reflection_date',
           );
     }
+  }
+
+  Future<void> _upsertEntries(List<HourEntry> entries, String userId) {
+    return _client
+        .from('hour_entries')
+        .upsert(
+          entries.map((entry) => _entryToRemote(entry, userId)).toList(),
+          onConflict: 'user_id,entry_date,hour_start',
+        );
   }
 
   String _requireUserId() {
@@ -160,6 +174,7 @@ class SupabaseCloudRepository implements CloudRepository {
       hourStart: (row['hour_start'] as num).toInt(),
       task: row['task'] as String? ?? '',
       categoryId: row['category_id'] as String?,
+      productive: row['productive'] as bool?,
       createdAt: _requiredDate(row['created_at']),
       updatedAt: _requiredDate(row['updated_at']),
       deletedAt: _optionalDate(row['deleted_at']),
@@ -215,6 +230,7 @@ class SupabaseCloudRepository implements CloudRepository {
       'hour_start': entry.hourStart,
       'task': entry.task,
       'category_id': entry.categoryId,
+      if (_remoteHasProductive) 'productive': entry.productive,
       'created_at': (entry.createdAt ?? entry.updatedAt).toIso8601String(),
       'updated_at': entry.updatedAt.toIso8601String(),
       'deleted_at': entry.deletedAt?.toIso8601String(),

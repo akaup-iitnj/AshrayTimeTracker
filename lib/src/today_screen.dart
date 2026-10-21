@@ -91,6 +91,7 @@ class _HourRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final entry = store.entryFor(date, hourStart);
     final category = store.categoryFor(entry?.categoryId);
+    final hasTask = entry?.task.isNotEmpty == true;
     final now = DateTime.now();
     final isCurrent = isSameDay(now, date) && now.hour == hourStart;
     final colors = Theme.of(context).colorScheme;
@@ -135,19 +136,26 @@ class _HourRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      entry?.task.isNotEmpty == true
-                          ? entry!.task
-                          : 'Tap to add what you did',
+                      hasTask ? entry!.task : 'Tap to add what you did',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: entry == null ? colors.onSurfaceVariant : null,
-                        fontStyle: entry == null ? FontStyle.italic : null,
+                        color: hasTask ? null : colors.onSurfaceVariant,
+                        fontStyle: hasTask ? null : FontStyle.italic,
                       ),
                     ),
-                    if (category != null) ...[
+                    if (category != null || entry?.productive != null) ...[
                       const SizedBox(height: 6),
-                      _CategoryLabel(category: category),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (category != null)
+                            _CategoryLabel(category: category),
+                          if (entry?.productive case final productive?)
+                            _ProductiveLabel(productive: productive),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -190,6 +198,45 @@ class _CategoryLabel extends StatelessWidget {
           color: color,
           fontWeight: FontWeight.w700,
         ),
+      ),
+    );
+  }
+}
+
+class _ProductiveLabel extends StatelessWidget {
+  const _ProductiveLabel({required this.productive});
+
+  final bool productive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final color = productive ? colors.primary : colors.error;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            productive
+                ? Icons.thumb_up_alt_outlined
+                : Icons.thumb_down_alt_outlined,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            productive ? 'Productive' : 'Not productive',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

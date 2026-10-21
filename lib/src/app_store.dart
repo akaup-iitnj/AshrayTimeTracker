@@ -54,6 +54,7 @@ class AppStore extends ChangeNotifier {
                 hourStart: entry.hourStart,
                 task: entry.task,
                 categoryId: entry.categoryId,
+                productive: entry.productive,
                 createdAt: entry.updatedAt,
                 updatedAt: entry.updatedAt,
                 deletedAt: entry.deletedAt,
@@ -162,6 +163,16 @@ class AppStore extends ChangeNotifier {
     return report;
   }
 
+  ({int productive, int unproductive}) productivityFor(DateTime date) {
+    var productive = 0;
+    var unproductive = 0;
+    for (final entry in entriesFor(date)) {
+      if (entry.productive == true) productive++;
+      if (entry.productive == false) unproductive++;
+    }
+    return (productive: productive, unproductive: unproductive);
+  }
+
   int completedCount(DateTime date) =>
       entriesFor(date).where((entry) => entry.isComplete).length;
 
@@ -200,7 +211,8 @@ class AppStore extends ChangeNotifier {
     required DateTime date,
     required int hourStart,
     required String task,
-    required String categoryId,
+    required String? categoryId,
+    bool? productive,
   }) async {
     final now = DateTime.now().toUtc();
     final existing = _entries[entryId(dateKey(date), hourStart)];
@@ -209,6 +221,7 @@ class AppStore extends ChangeNotifier {
       hourStart: hourStart,
       task: task.trim(),
       categoryId: categoryId,
+      productive: productive,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     );
@@ -217,6 +230,53 @@ class AppStore extends ChangeNotifier {
     await _repository.saveEntries(_entries.values);
     await _reminders.cancelForEntry(date, hourStart);
     _queueSync();
+  }
+
+  /// Marks an hour productive or not without requiring a task or category.
+  Future<void> rateHour(DateTime date, int hourStart, bool productive) async {
+    _applyRating(dateKey(date), hourStart, productive, DateTime.now().toUtc());
+    notifyListeners();
+    await _repository.saveEntries(_entries.values);
+    await _reminders.cancelForEntry(date, hourStart);
+    _queueSync();
+  }
+
+  /// Applies ratings answered from notification actions while the app was
+  /// closed or in the background.
+  Future<void> applyPendingRatings() async {
+    final pending = await _repository.takePendingRatings();
+    if (pending.isEmpty) return;
+    var changed = false;
+    for (final rating in pending) {
+      changed |= _applyRating(
+        rating.date,
+        rating.hourStart,
+        rating.productive,
+        rating.ratedAt,
+      );
+    }
+    if (!changed) return;
+    notifyListeners();
+    await _repository.saveEntries(_entries.values);
+    _queueSync();
+  }
+
+  bool _applyRating(String date, int hourStart, bool productive, DateTime at) {
+    final id = entryId(date, hourStart);
+    final existing = _entries[id];
+    // An edit made after the rating was tapped wins.
+    if (existing != null && existing.updatedAt.isAfter(at)) return false;
+    final live = existing?.isDeleted == true ? null : existing;
+    _entries[id] = HourEntry(
+      date: date,
+      hourStart: hourStart,
+      task: live?.task ?? '',
+      categoryId: live?.categoryId,
+      productive: productive,
+      createdAt: existing?.createdAt ?? at,
+      updatedAt: at,
+    );
+    return true;
   }
 
   Future<void> deleteEntry(DateTime date, int hourStart) async {
@@ -300,6 +360,7 @@ class AppStore extends ChangeNotifier {
           hourStart: entry.hourStart,
           task: entry.task,
           categoryId: null,
+          productive: entry.productive,
           createdAt: entry.createdAt ?? entry.updatedAt,
           updatedAt: now,
         );

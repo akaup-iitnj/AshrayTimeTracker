@@ -86,6 +86,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     widget.store.reminders.reminderTaps.addListener(_handleReminderTap);
     widget.store.reminders.morningVideoTaps.addListener(_handleMorningVideoTap);
+    widget.store.reminders.quickRatingsQueued.addListener(_applyQuickRatings);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleReminderTap();
       _handleMorningVideoTap();
@@ -99,14 +100,25 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     widget.store.reminders.morningVideoTaps.removeListener(
       _handleMorningVideoTap,
     );
+    widget.store.reminders.quickRatingsQueued.removeListener(
+      _applyQuickRatings,
+    );
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(widget.store.synchronize());
+      unawaited(
+        widget.store.applyPendingRatings().whenComplete(
+          widget.store.synchronize,
+        ),
+      );
     }
+  }
+
+  void _applyQuickRatings() {
+    unawaited(widget.store.applyPendingRatings());
   }
 
   void _handleReminderTap() {
