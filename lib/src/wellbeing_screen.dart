@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 import 'date_navigator.dart';
 import 'models.dart';
 
@@ -118,9 +119,7 @@ class _WellbeingScreenState extends State<WellbeingScreen> {
           children: [
             Text(
               'Daily check-in',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
             const SizedBox(height: 10),
             DateNavigator(
@@ -128,13 +127,8 @@ class _WellbeingScreenState extends State<WellbeingScreen> {
               onDateChanged: widget.onDateChanged,
             ),
             const SizedBox(height: 20),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+            BoldCard(
+              color: Bold.yellow,
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -144,6 +138,7 @@ class _WellbeingScreenState extends State<WellbeingScreen> {
                       'How did today feel?',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        fontVariations: const [FontVariation('wght', 700)],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -182,13 +177,7 @@ class _WellbeingScreenState extends State<WellbeingScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+            BoldCard(
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -198,6 +187,7 @@ class _WellbeingScreenState extends State<WellbeingScreen> {
                       'Reflect on your day',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        fontVariations: const [FontVariation('wght', 700)],
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -272,7 +262,10 @@ class _ScoreControl extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontVariations: [FontVariation('wght', 600)],
+                  ),
                 ),
               ),
               Text('$value / 5'),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hourly_time_tracker/src/app.dart';
+import 'package:hourly_time_tracker/src/bold.dart';
 import 'package:hourly_time_tracker/src/app_store.dart';
 import 'package:hourly_time_tracker/src/local_repository.dart';
 import 'package:hourly_time_tracker/src/reminder_service.dart';
@@ -26,7 +27,7 @@ void main() {
     await tester.ensureVisible(workChip);
     await tester.tap(workChip);
     await tester.pump();
-    final saveButton = find.widgetWithText(FilledButton, 'Save hour');
+    final saveButton = find.widgetWithText(BoldButton, 'Save hour');
     await tester.ensureVisible(saveButton);
     await tester.pumpAndSettle();
     await tester.tap(saveButton);

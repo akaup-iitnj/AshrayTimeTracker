@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'bold.dart';
 import 'models.dart';
 
 class DateNavigator extends StatelessWidget {
@@ -38,42 +39,77 @@ class DateNavigator extends StatelessWidget {
 
     return Row(
       children: [
-        IconButton(
+        _NavTile(
           tooltip: 'Previous day',
-          onPressed: () =>
-              onDateChanged(date.subtract(const Duration(days: 1))),
-          icon: const Icon(Icons.chevron_left),
+          icon: Icons.chevron_left_rounded,
+          onTap: () => onDateChanged(date.subtract(const Duration(days: 1))),
         ),
         Expanded(
           child: Column(
             children: [
-              Text(
-                relative ?? dateText,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
+              Text(relative ?? dateText, style: archivo(800, size: 18)),
               if (relative != null)
                 Text(dateText, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
-        IconButton(
+        _NavTile(
           tooltip: 'Next day',
-          onPressed: () => onDateChanged(date.add(const Duration(days: 1))),
-          icon: const Icon(Icons.chevron_right),
+          icon: Icons.chevron_right_rounded,
+          onTap: () => onDateChanged(date.add(const Duration(days: 1))),
         ),
-        IconButton(
+        const SizedBox(width: 6),
+        _NavTile(
           tooltip: 'Open calendar',
-          onPressed: () => _openCalendar(context),
-          icon: const Icon(Icons.calendar_month_outlined),
+          icon: Icons.calendar_month_rounded,
+          color: Bold.sky,
+          onTap: () => _openCalendar(context),
         ),
-        if (!isSameDay(date, today))
-          TextButton(
-            onPressed: () => onDateChanged(today),
-            child: const Text('Today'),
+        if (!isSameDay(date, today)) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: 'Go to today',
+            child: BoldCard(
+              color: Bold.yellow,
+              radius: Bold.radiusSm,
+              shadow: Bold.shadowSm,
+              onTap: () => onDateChanged(today),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              child: Text('Today', style: dmSans(800, size: 13)),
+            ),
           ),
+        ],
       ],
+    );
+  }
+}
+
+class _NavTile extends StatelessWidget {
+  const _NavTile({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+    this.color = Bold.panel,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: BoldCard(
+        color: color,
+        radius: Bold.radiusSm,
+        shadow: Bold.shadowSm,
+        onTap: onTap,
+        semanticLabel: tooltip,
+        padding: const EdgeInsets.all(6),
+        child: Icon(icon, size: 22, color: Bold.ink),
+      ),
     );
   }
 }

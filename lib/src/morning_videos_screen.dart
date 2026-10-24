@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'bold.dart';
+
 class MorningVideosScreen extends StatelessWidget {
   const MorningVideosScreen({super.key});
 
@@ -29,9 +31,7 @@ class MorningVideosScreen extends StatelessWidget {
         children: [
           Text(
             'Start intentionally',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineLarge,
           ),
           const SizedBox(height: 8),
           Text(
@@ -71,18 +71,20 @@ class _VideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+    return BoldCard(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 12,
         ),
         leading: const Icon(Icons.play_circle_outline, size: 34),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontVariations: [FontVariation('wght', 700)],
+          ),
+        ),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.open_in_new),
         onTap: onTap,

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 import 'date_navigator.dart';
 import 'edit_hour_screen.dart';
 import 'models.dart';
@@ -33,39 +34,25 @@ class TodayScreen extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(side, 22, side, 28),
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
                         'Your day',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.headlineLarge,
                       ),
                     ),
-                    Text(
-                      '$complete / 24 logged',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+                    BoldTag(label: '$complete / 24 logged'),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 DateNavigator(date: date, onDateChanged: onDateChanged),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: complete / 24,
-                    minHeight: 7,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  ),
-                ),
+                const SizedBox(height: 14),
+                BoldProgress(value: complete / 24),
                 const SizedBox(height: 20),
                 for (var hour = 0; hour < 24; hour++) ...[
                   _HourRow(store: store, date: date, hourStart: hour),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                 ],
               ],
             );
@@ -92,151 +79,90 @@ class _HourRow extends StatelessWidget {
     final entry = store.entryFor(date, hourStart);
     final category = store.categoryFor(entry?.categoryId);
     final hasTask = entry?.task.isNotEmpty == true;
+    final complete = entry?.isComplete == true;
     final now = DateTime.now();
     final isCurrent = isSameDay(now, date) && now.hour == hourStart;
-    final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: isCurrent ? colors.primary : colors.outlineVariant,
-          width: isCurrent ? 1.5 : 1,
-        ),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => EditHourScreen(
-                store: store,
-                date: date,
-                hourStart: hourStart,
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 88,
-                child: Text(
-                  hourLabel(hourStart),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isCurrent ? colors.primary : null,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      hasTask ? entry!.task : 'Tap to add what you did',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: hasTask ? null : colors.onSurfaceVariant,
-                        fontStyle: hasTask ? null : FontStyle.italic,
-                      ),
-                    ),
-                    if (category != null || entry?.productive != null) ...[
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          if (category != null)
-                            _CategoryLabel(category: category),
-                          if (entry?.productive case final productive?)
-                            _ProductiveLabel(productive: productive),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Icon(
-                entry?.isComplete == true
-                    ? Icons.check_circle
-                    : Icons.circle_outlined,
-                color: entry?.isComplete == true
-                    ? colors.primary
-                    : colors.outlineVariant,
-                size: 21,
-              ),
-            ],
+    return BoldCard(
+      color: isCurrent ? Bold.yellow : Bold.panel,
+      shadow: isCurrent ? Bold.shadow : Bold.shadowSm + 1,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                EditHourScreen(store: store, date: date, hourStart: hourStart),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryLabel extends StatelessWidget {
-  const _CategoryLabel({required this.category});
-
-  final TimeCategory category;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Color(category.colorValue);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        category.name,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _ProductiveLabel extends StatelessWidget {
-  const _ProductiveLabel({required this.productive});
-
-  final bool productive;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final color = productive ? colors.primary : colors.error;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(99),
-      ),
+        );
+      },
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            productive
-                ? Icons.thumb_up_alt_outlined
-                : Icons.thumb_down_alt_outlined,
-            size: 12,
-            color: color,
+          SizedBox(
+            width: 92,
+            child: Text(hourLabel(hourStart), style: archivo(800, size: 14)),
           ),
-          const SizedBox(width: 4),
-          Text(
-            productive ? 'Productive' : 'Not productive',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hasTask ? entry!.task : 'Tap to add what you did',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: hasTask
+                      ? text.bodyMedium.weight(600)
+                      : text.bodyMedium?.copyWith(
+                          color: isCurrent ? Bold.ink : Bold.faint,
+                        ),
+                ),
+                if (category != null || entry?.productive != null) ...[
+                  const SizedBox(height: 7),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (category != null)
+                        CategoryChip(
+                          name: category.name,
+                          color: Color(category.colorValue),
+                        ),
+                      if (entry?.productive case final productive?)
+                        ProductiveTag(productive: productive),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
+          const SizedBox(width: 10),
+          _CompletionMark(complete: complete),
         ],
+      ),
+    );
+  }
+}
+
+class _CompletionMark extends StatelessWidget {
+  const _CompletionMark({required this.complete});
+
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: complete ? 'Logged' : 'Not logged',
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: complete ? Bold.blue : Bold.panel,
+          shape: BoxShape.circle,
+          border: Border.all(color: Bold.ink, width: Bold.border),
+        ),
+        child: complete
+            ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+            : null,
       ),
     );
   }

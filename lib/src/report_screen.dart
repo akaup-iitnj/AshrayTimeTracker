@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 import 'date_navigator.dart';
 import 'models.dart';
 
@@ -34,7 +35,7 @@ class ReportScreen extends StatelessWidget {
                       (item) => _ReportSlice(
                         name: item.key?.name ?? 'Uncategorized',
                         color: item.key == null
-                            ? Theme.of(context).colorScheme.outline
+                            ? Bold.stone
                             : Color(item.key!.colorValue),
                         hours: item.value,
                       ),
@@ -49,11 +50,9 @@ class ReportScreen extends StatelessWidget {
               children: [
                 Text(
                   'Daily report',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 DateNavigator(date: date, onDateChanged: onDateChanged),
                 const SizedBox(height: 24),
                 if (productivity.productive + productivity.unproductive >
@@ -67,13 +66,7 @@ class ReportScreen extends StatelessWidget {
                 if (total == 0)
                   const _EmptyReport()
                 else ...[
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
+                  BoldCard(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: constraints.maxWidth >= 600
@@ -99,13 +92,7 @@ class ReportScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
+                  BoldCard(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
@@ -113,8 +100,7 @@ class ReportScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Category breakdown',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 18),
                           for (
@@ -151,47 +137,47 @@ class _ProductivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final rated = productive + unproductive;
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: colors.outlineVariant),
-      ),
+    return BoldCard(
+      color: Bold.sky,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Productivity',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
+            Text('Productivity', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
               '$productive of $rated rated '
               '${rated == 1 ? 'hour' : 'hours'} productive',
-              style: TextStyle(color: colors.onSurfaceVariant),
+              style: dmSans(600, size: 14, color: Bold.ink),
             ),
             const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
+            Container(
+              height: 18,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Bold.panel,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: Bold.ink, width: Bold.border),
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (productive > 0)
                     Expanded(
                       flex: productive,
-                      child: Container(height: 10, color: colors.primary),
+                      child: const ColoredBox(color: Bold.blue),
+                    ),
+                  if (productive > 0 && unproductive > 0)
+                    const SizedBox(
+                      width: Bold.border,
+                      child: ColoredBox(color: Bold.ink),
                     ),
                   if (unproductive > 0)
                     Expanded(
                       flex: unproductive,
-                      child: Container(
-                        height: 10,
-                        color: colors.error.withValues(alpha: 0.7),
-                      ),
+                      child: const ColoredBox(color: Bold.coral),
                     ),
                 ],
               ),
@@ -208,34 +194,23 @@ class _EmptyReport extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+    return BoldCard(
+      color: Bold.yellow,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
         child: Column(
           children: [
-            Icon(
-              Icons.donut_large_outlined,
-              size: 46,
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            const Icon(Icons.donut_large_rounded, size: 46, color: Bold.ink),
             const SizedBox(height: 14),
             Text(
               'Nothing logged yet',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 6),
             Text(
               'Add tasks to the day and your category totals will appear here.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: dmSans(500, size: 14, color: Bold.ink),
             ),
           ],
         ),
@@ -266,12 +241,7 @@ class _Chart extends StatelessWidget {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '$total',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                Text('$total', style: Theme.of(context).textTheme.displaySmall),
                 Text(
                   total == 1 ? 'hour logged' : 'hours logged',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -298,9 +268,7 @@ class _ReportSummary extends StatelessWidget {
       children: [
         Text(
           'Where the day went',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 6),
         Text(
@@ -321,13 +289,17 @@ class _ReportSummary extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: slice.color,
                     shape: BoxShape.circle,
+                    border: Border.all(color: Bold.ink, width: 1.5),
                   ),
                 ),
                 const SizedBox(width: 9),
                 Expanded(child: Text(slice.name)),
                 Text(
                   '${slice.hours}h',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontVariations: [FontVariation('wght', 700)],
+                  ),
                 ),
               ],
             ),
@@ -356,28 +328,24 @@ class _CategoryBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: slice.color,
                 shape: BoxShape.circle,
+                border: Border.all(color: Bold.ink, width: 1.5),
               ),
             ),
             const SizedBox(width: 9),
             Expanded(
               child: Text(
                 slice.name,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontVariations: [FontVariation('wght', 600)],
+                ),
               ),
             ),
             Text('${slice.hours}h · ${(percent * 100).round()}%'),
           ],
         ),
         const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(5),
-          child: LinearProgressIndicator(
-            value: percent,
-            minHeight: 7,
-            color: slice.color,
-            backgroundColor: slice.color.withValues(alpha: 0.12),
-          ),
-        ),
+        BoldProgress(value: percent, color: slice.color, height: 14),
       ],
     );
   }
@@ -404,25 +372,42 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final total = slices.fold<int>(0, (sum, item) => sum + item.hours);
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 13;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    const gap = 0.025;
+    final outer = math.min(size.width, size.height) / 2 - 2;
+    final inner = outer - 30;
+    final outline = Paint()
+      ..color = Bold.ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = Bold.border
+      ..strokeJoin = StrokeJoin.round;
     var startAngle = -math.pi / 2;
 
     for (final slice in slices) {
       final sweep = (slice.hours / total) * math.pi * 2;
-      final paint = Paint()
-        ..color = slice.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 24
-        ..strokeCap = StrokeCap.butt;
-      canvas.drawArc(
-        rect,
-        startAngle + gap / 2,
-        math.max(0, sweep - gap),
-        false,
-        paint,
-      );
+      final Path path;
+      if (sweep >= math.pi * 2) {
+        path = Path()
+          ..fillType = PathFillType.evenOdd
+          ..addOval(Rect.fromCircle(center: center, radius: outer))
+          ..addOval(Rect.fromCircle(center: center, radius: inner));
+      } else {
+        path = Path()
+          ..arcTo(
+            Rect.fromCircle(center: center, radius: outer),
+            startAngle,
+            sweep,
+            true,
+          )
+          ..arcTo(
+            Rect.fromCircle(center: center, radius: inner),
+            startAngle + sweep,
+            -sweep,
+            false,
+          )
+          ..close();
+      }
+      canvas
+        ..drawPath(path, Paint()..color = slice.color)
+        ..drawPath(path, outline);
       startAngle += sweep;
     }
   }

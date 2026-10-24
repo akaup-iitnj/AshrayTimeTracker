@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 import 'csv_export.dart';
 import 'edit_hour_screen.dart';
 import 'models.dart';
@@ -24,43 +25,10 @@ class TimeTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF496B5E);
-    final colors = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: Brightness.light,
-      surface: const Color(0xFFFBFCFA),
-    );
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Time Tracker',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: colors,
-        scaffoldBackgroundColor: const Color(0xFFF5F7F4),
-        fontFamily: 'Segoe UI',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF5F7F4),
-          surfaceTintColor: Colors.transparent,
-        ),
-        cardTheme: const CardThemeData(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          color: Color(0xFFFBFCFA),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: colors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: colors.outlineVariant),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: colors.outlineVariant),
-          ),
-        ),
-      ),
+      title: 'Chronicle',
+      theme: boldTheme(),
       home: AppShell(store: store, csvExporter: csvExporter),
     );
   }
@@ -213,13 +181,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       setState(() => _selectedIndex = index);
                     },
                     labelType: NavigationRailLabelType.all,
-                    leading: Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 20),
-                      child: Icon(
-                        Icons.schedule_rounded,
-                        size: 30,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    leading: const Padding(
+                      padding: EdgeInsets.only(top: 16, bottom: 20),
+                      child: ChronicleMark(size: 40),
                     ),
                     destinations: destinations
                         .map(
@@ -231,7 +195,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         )
                         .toList(),
                   ),
-                  const VerticalDivider(width: 1),
+                  const VerticalDivider(
+                    width: Bold.border,
+                    thickness: Bold.border,
+                    color: Bold.ink,
+                  ),
                   Expanded(
                     child: IndexedStack(index: _selectedIndex, children: pages),
                   ),
@@ -245,12 +213,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           body: SafeArea(
             child: IndexedStack(index: _selectedIndex, children: pages),
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() => _selectedIndex = index);
-            },
-            destinations: destinations,
+          bottomNavigationBar: DecoratedBox(
+            // In front: the bar paints its own background over a border behind.
+            position: DecorationPosition.foreground,
+            decoration: const BoxDecoration(border: Border(top: Bold.outline)),
+            child: NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
+              destinations: destinations,
+            ),
           ),
         );
       },

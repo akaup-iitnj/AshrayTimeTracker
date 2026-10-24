@@ -1,5 +1,5 @@
 name: hourly_time_tracker
-description: "A calm, local-first hourly time tracker for Android and Windows."
+description: "Chronicle: a local-first, hour-by-hour log of your day for Android, Windows, and the web."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.6.0+6
+version: 0.7.0+7
 
 environment:
   sdk: ^3.12.2
@@ -66,6 +66,16 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Bold theme fonts (SIL Open Font License; see assets/fonts/OFL-*.txt).
+  # Both are variable fonts: styles set the weight axis through bold.dart.
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo.ttf
+    - family: DMSans
+      fonts:
+        - asset: assets/fonts/DMSans.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

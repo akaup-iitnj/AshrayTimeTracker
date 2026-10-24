@@ -1,6 +1,10 @@
-# Time Tracker
+# Chronicle
 
-A clean hourly time catalog for Android and Windows, built with Flutter. Each day has 24 rows. Every row records only a task and a category, and the report screen turns those entries into a category breakdown.
+An hour-by-hour log of your day for Android, Windows, and the web, built with Flutter. Each day has 24 rows. Every row records a task, a category, and whether the hour was productive, and the report screen turns those entries into a breakdown. Chronicle was called Time Tracker until version 0.7; the Android package id and this repository keep the old name so existing installs and links keep working.
+
+## Look
+
+Chronicle wears the Bold theme from the Eisenhower app (`apps/web/src/themes.css`, `[data-theme='bold']`), the same one the Diwan Android app used: cream paper, black ink, 2dp black outlines, hard offset shadows, bright flat tiles, and Archivo ExtraBold headings over DM Sans. `lib/src/bold.dart` holds the tokens, the Material theme, and the shared widgets (`BoldCard`, `BoldButton`, `BoldTag`, `BoldProgress`). Both fonts are variable fonts under the SIL Open Font License (`assets/fonts/`).
 
 ## Current status
 

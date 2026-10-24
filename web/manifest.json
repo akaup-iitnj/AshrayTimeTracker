@@ -1,11 +1,11 @@
 {
-    "name": "Time Tracker",
-    "short_name": "Time Tracker",
+    "name": "Chronicle",
+    "short_name": "Chronicle",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#496B5E",
-    "theme_color": "#496B5E",
-    "description": "A calm hourly time tracker.",
+    "background_color": "#FFFDF5",
+    "theme_color": "#FFD84D",
+    "description": "Chronicle: an hour-by-hour log of your day.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

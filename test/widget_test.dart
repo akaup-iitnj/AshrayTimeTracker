@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hourly_time_tracker/src/app.dart';
+import 'package:hourly_time_tracker/src/bold.dart';
 import 'package:hourly_time_tracker/src/app_store.dart';
 import 'package:hourly_time_tracker/src/local_repository.dart';
 import 'package:hourly_time_tracker/src/reminder_service.dart';
@@ -51,18 +52,18 @@ void main() {
 
     await tester.tap(find.text('Tap to add what you did').first);
     await tester.pumpAndSettle();
-    final saveButton = find.widgetWithText(FilledButton, 'Save hour');
+    final saveButton = find.widgetWithText(BoldButton, 'Save hour');
     await tester.dragUntilVisible(
       saveButton,
       find.byType(ListView).last,
       const Offset(0, -200),
     );
     await tester.pumpAndSettle();
-    expect(tester.widget<FilledButton>(saveButton).onPressed, isNull);
+    expect(tester.widget<BoldButton>(saveButton).onPressed, isNull);
 
     await tester.tap(find.text('Not productive'));
     await tester.pump();
-    expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+    expect(tester.widget<BoldButton>(saveButton).onPressed, isNotNull);
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
@@ -78,7 +79,7 @@ void main() {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
 
-    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await tester.tap(find.byTooltip('Open calendar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Jump to a day'), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'account_screen.dart';
 import 'app_store.dart';
+import 'bold.dart';
 import 'category_editor_dialog.dart';
 import 'csv_export.dart';
 import 'models.dart';
@@ -32,9 +33,7 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 Text(
                   'Settings',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 22),
                 const _SectionTitle(title: 'Reminders'),
@@ -52,13 +51,7 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
+                BoldCard(
                   child: Column(
                     children: [
                       for (
@@ -185,11 +178,7 @@ class _ExportCardState extends State<_ExportCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+    return BoldCard(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         enabled: !_exporting,
@@ -233,11 +222,8 @@ class _CloudCard extends StatelessWidget {
     } else {
       subtitle = 'Sign in to sync this device with your other devices.';
     }
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+    return BoldCard(
+      color: Bold.sky,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         enabled: store.cloudAvailable,
@@ -280,11 +266,8 @@ class _ReminderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = store.settings;
     final supported = store.reminders.isSupported;
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
+    return BoldCard(
+      color: Bold.yellow,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
         child: Column(
@@ -384,9 +367,10 @@ class _ReminderCard extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Reminder window',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontVariations: const [FontVariation('wght', 700)],
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -515,10 +499,12 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      title,
-      style: Theme.of(
-        context,
-      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+      title.toUpperCase(),
+      style: dmSans(
+        800,
+        size: 13,
+        color: Bold.ink,
+      ).copyWith(letterSpacing: 0.8),
     );
   }
 }

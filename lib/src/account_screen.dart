@@ -107,8 +107,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                 ? 'Create your account'
                                 : 'Sync across devices',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -242,9 +241,10 @@ class _SignedInView extends StatelessWidget {
         Text(
           store.cloudUserEmail ?? 'Signed in',
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            fontVariations: const [FontVariation('wght', 800)],
+          ),
         ),
         const SizedBox(height: 5),
         Text(

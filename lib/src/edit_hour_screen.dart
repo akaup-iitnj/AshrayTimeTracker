@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 import 'category_editor_dialog.dart';
 import 'models.dart';
 
@@ -104,6 +105,11 @@ class _EditHourScreenState extends State<EditHourScreen> {
     }
   }
 
+  /// Tapping the selected rating again clears it.
+  void _toggleRating(bool value) {
+    setState(() => _productive = _productive == value ? null : value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateText = MaterialLocalizations.of(
@@ -130,25 +136,12 @@ class _EditHourScreenState extends State<EditHourScreen> {
               children: [
                 Text(
                   hourLabel(widget.hourStart),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  dateText,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  'What did you do?',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
+                Text(dateText, style: dmSans(600, size: 15, color: Bold.muted)),
+                const SizedBox(height: 26),
+                const _SectionLabel('What did you do?'),
                 TextField(
                   controller: _taskController,
                   autofocus: true,
@@ -159,24 +152,23 @@ class _EditHourScreenState extends State<EditHourScreen> {
                     hintText: 'A short description is enough',
                   ),
                 ),
-                const SizedBox(height: 26),
-                Text(
-                  'Category',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 24),
+                const _SectionLabel('Category'),
                 Wrap(
-                  spacing: 9,
-                  runSpacing: 9,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     for (final category in widget.store.categories)
                       ChoiceChip(
                         label: Text(category.name),
-                        avatar: CircleAvatar(
-                          radius: 6,
-                          backgroundColor: Color(category.colorValue),
+                        avatar: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Color(category.colorValue),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Bold.ink),
+                          ),
                         ),
                         selected: _categoryId == category.id,
                         onSelected: (_) {
@@ -184,61 +176,113 @@ class _EditHourScreenState extends State<EditHourScreen> {
                         },
                       ),
                     ActionChip(
-                      avatar: const Icon(Icons.add, size: 18),
+                      avatar: const Icon(Icons.add, size: 18, color: Bold.ink),
                       label: const Text('New category'),
+                      backgroundColor: Bold.soft,
                       onPressed: _addCategory,
                     ),
                   ],
                 ),
-                const SizedBox(height: 26),
-                Text(
-                  'Was it productive?',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(
-                      value: true,
-                      label: Text('Productive'),
-                      icon: Icon(Icons.thumb_up_alt_outlined),
+                const SizedBox(height: 24),
+                const _SectionLabel('Was it productive?'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RatingTile(
+                        label: 'Productive',
+                        icon: Icons.thumb_up_alt_rounded,
+                        color: Bold.sky,
+                        selected: _productive == true,
+                        onTap: () => _toggleRating(true),
+                      ),
                     ),
-                    ButtonSegment(
-                      value: false,
-                      label: Text('Not productive'),
-                      icon: Icon(Icons.thumb_down_alt_outlined),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _RatingTile(
+                        label: 'Not productive',
+                        icon: Icons.thumb_down_alt_rounded,
+                        color: Bold.coral,
+                        selected: _productive == false,
+                        onTap: () => _toggleRating(false),
+                      ),
                     ),
                   ],
-                  selected: {?_productive},
-                  emptySelectionAllowed: true,
-                  showSelectedIcon: false,
-                  onSelectionChanged: (selection) {
-                    setState(
-                      () => _productive = selection.isEmpty
-                          ? null
-                          : selection.first,
-                    );
-                  },
                 ),
-                const SizedBox(height: 34),
-                FilledButton.icon(
+                const SizedBox(height: 32),
+                BoldButton(
+                  label: _saving ? 'Saving…' : 'Save hour',
+                  icon: const Icon(Icons.check_rounded),
+                  expand: true,
                   onPressed: _canSave ? _save : null,
-                  icon: _saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(_saving ? 'Saving…' : 'Save hour'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                  ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        text.toUpperCase(),
+        style: dmSans(
+          800,
+          size: 12,
+          color: Bold.ink,
+        ).copyWith(letterSpacing: 0.8),
+      ),
+    );
+  }
+}
+
+class _RatingTile extends StatelessWidget {
+  const _RatingTile({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      child: BoldCard(
+        color: selected ? color : Bold.panel,
+        radius: Bold.radiusSm,
+        shadow: selected ? Bold.shadow : Bold.shadowSm,
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: Bold.ink),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: dmSans(selected ? 800 : 600, size: 14, color: Bold.ink),
+              ),
+            ),
+          ],
         ),
       ),
     );
