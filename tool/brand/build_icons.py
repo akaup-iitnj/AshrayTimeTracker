@@ -1,5 +1,5 @@
 """
-Build every Chronicle icon from one geometry: "Hours to blocks".
+Build every Chronicler icon from one geometry: "Hours to blocks".
 
 An hourglass in the Bold look. Blue sand runs through the neck and lands as
 a pile of hour blocks in the category colours: passing time becomes the hours
@@ -259,7 +259,7 @@ def main():
           '<resources>\n'
           f'    <color name="ic_launcher_background">{YELLOW}</color>\n'
           '</resources>\n')
-    print('Chronicle icons written.')
+    print('Chronicler icons written.')
 
 
 if __name__ == '__main__':

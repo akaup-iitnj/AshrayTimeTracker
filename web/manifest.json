@@ -1,11 +1,11 @@
 {
-    "name": "Chronicle",
-    "short_name": "Chronicle",
+    "name": "Chronicler",
+    "short_name": "Chronicler",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFDF5",
     "theme_color": "#FFD84D",
-    "description": "Chronicle: an hour-by-hour log of your day.",
+    "description": "Chronicler: an hour-by-hour log of your day.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

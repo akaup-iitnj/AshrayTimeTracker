@@ -51,8 +51,8 @@ class PlatformCsvExporter implements CsvExporter {
 
     final result = await SharePlus.instance.share(
       ShareParams(
-        title: 'Export Chronicle data',
-        subject: 'Chronicle CSV export',
+        title: 'Export Chronicler data',
+        subject: 'Chronicler CSV export',
         text: 'A backup of ${data.entryCount} logged hours.',
         files: <XFile>[XFile.fromData(data.bytes, mimeType: 'text/csv')],
         fileNameOverrides: <String>[data.fileName],

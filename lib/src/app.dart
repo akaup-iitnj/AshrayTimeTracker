@@ -27,7 +27,7 @@ class TimeTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Chronicle',
+      title: 'Chronicler',
       theme: boldTheme(),
       home: AppShell(store: store, csvExporter: csvExporter),
     );

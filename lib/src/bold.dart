@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Chronicle's look: the "Bold" theme from the Eisenhower app
+/// Chronicler's look: the "Bold" theme from the Eisenhower app
 /// (apps/web/src/themes.css, [data-theme='bold']) as the Diwan Android app
 /// wore it. Cream paper, black ink, 2dp black outlines, hard unblurred offset
 /// shadows, bright flat tiles, Archivo ExtraBold headings over DM Sans, and
@@ -545,7 +545,7 @@ class BoldProgress extends StatelessWidget {
   }
 }
 
-/// Chronicle's mark, "Hours to blocks": an hourglass whose sand lands as
+/// Chronicler's mark, "Hours to blocks": an hourglass whose sand lands as
 /// hour blocks. The image comes from tool/brand/build_icons.py, the same
 /// source as the launcher and browser icons, and carries its own tile,
 /// outline and shadow.
@@ -557,7 +557,7 @@ class ChronicleMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Chronicle',
+      label: 'Chronicler',
       image: true,
       child: Image.asset(
         'assets/brand/chronicle-icon.png',
