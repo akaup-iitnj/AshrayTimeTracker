@@ -26,6 +26,13 @@ void main() {
     expect(entry?.productive, isTrue);
     expect(entry?.task, isEmpty);
     expect(entry?.isComplete, isFalse);
+    expect(entry?.isLogged, isTrue);
+    expect(store.loggedCount(date), 1);
+    expect(store.trackedFor(date), (
+      productive: 1,
+      unproductive: 0,
+      unrated: 0,
+    ));
     expect(store.reportFor(date), isEmpty);
     expect(store.productivityFor(date), (productive: 1, unproductive: 0));
   });

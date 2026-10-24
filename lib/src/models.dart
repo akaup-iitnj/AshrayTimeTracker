@@ -80,6 +80,15 @@ class HourEntry {
 
   String get id => entryId(date, hourStart);
   bool get isDeleted => deletedAt != null;
+
+  /// Anything recorded for the hour: a task, a category or a rating. This is
+  /// what "logged" means everywhere, so an hour rated from a notification
+  /// counts the same as one written up in full.
+  bool get isLogged =>
+      !isDeleted &&
+      (task.trim().isNotEmpty || categoryId != null || productive != null);
+
+  /// A full entry: a task and a category.
   bool get isComplete =>
       !isDeleted && task.trim().isNotEmpty && categoryId != null;
 

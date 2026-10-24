@@ -173,18 +173,19 @@ class AppStore extends ChangeNotifier {
     return (productive: productive, unproductive: unproductive);
   }
 
-  /// Hours with any record, a task or a productive rating, split by rating.
+  /// Logged hours (see [HourEntry.isLogged]), split by their rating.
   ({int productive, int unproductive, int unrated}) trackedFor(DateTime date) {
     var productive = 0;
     var unproductive = 0;
     var unrated = 0;
-    for (final entry in entriesFor(date)) {
-      if (entry.productive == true) {
-        productive++;
-      } else if (entry.productive == false) {
-        unproductive++;
-      } else if (entry.task.trim().isNotEmpty) {
-        unrated++;
+    for (final entry in entriesFor(date).where((entry) => entry.isLogged)) {
+      switch (entry.productive) {
+        case true:
+          productive++;
+        case false:
+          unproductive++;
+        case null:
+          unrated++;
       }
     }
     return (
@@ -194,26 +195,22 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  int trackedCount(DateTime date) {
-    final tracked = trackedFor(date);
-    return tracked.productive + tracked.unproductive + tracked.unrated;
-  }
+  /// Hours with anything recorded, out of the day's 24.
+  int loggedCount(DateTime date) =>
+      entriesFor(date).where((entry) => entry.isLogged).length;
 
   /// Consecutive days, ending today, with at least one tracked hour. A day
   /// that hasn't been logged yet doesn't break the streak until it's over.
   int trackingStreak(DateTime today) {
     var day = dayOnly(today);
-    if (trackedCount(day) == 0) day = day.subtract(const Duration(days: 1));
+    if (loggedCount(day) == 0) day = day.subtract(const Duration(days: 1));
     var streak = 0;
-    while (trackedCount(day) > 0) {
+    while (loggedCount(day) > 0) {
       streak++;
       day = day.subtract(const Duration(days: 1));
     }
     return streak;
   }
-
-  int completedCount(DateTime date) =>
-      entriesFor(date).where((entry) => entry.isComplete).length;
 
   int categoryUsageCount(String categoryId) => _entries.values
       .where((entry) => !entry.isDeleted && entry.categoryId == categoryId)

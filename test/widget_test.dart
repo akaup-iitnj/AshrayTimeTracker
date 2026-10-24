@@ -137,7 +137,8 @@ void main() {
     expect(entry?.task, isEmpty);
     expect(entry?.categoryId, isNull);
     expect(find.text('Not productive'), findsOneWidget);
-    expect(find.text('0 / 24 logged'), findsOneWidget);
+    // A rating alone counts as a logged hour.
+    expect(find.text('1 / 24 logged'), findsOneWidget);
   });
 
   testWidgets('opens a month calendar from the day header', (tester) async {

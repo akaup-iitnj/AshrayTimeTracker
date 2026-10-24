@@ -28,7 +28,7 @@ class TodayScreen extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             final side = math.max(16.0, (constraints.maxWidth - 760) / 2);
-            final complete = store.completedCount(date);
+            final complete = store.loggedCount(date);
             return ListView(
               key: PageStorageKey<String>('day-${dateKey(date)}'),
               padding: EdgeInsets.fromLTRB(side, 22, side, 28),
@@ -79,7 +79,7 @@ class _HourRow extends StatelessWidget {
     final entry = store.entryFor(date, hourStart);
     final category = store.categoryFor(entry?.categoryId);
     final hasTask = entry?.task.isNotEmpty == true;
-    final complete = entry?.isComplete == true;
+    final complete = entry?.isLogged == true;
     final now = DateTime.now();
     final isCurrent = isSameDay(now, date) && now.hour == hourStart;
     final text = Theme.of(context).textTheme;

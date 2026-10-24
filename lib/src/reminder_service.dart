@@ -182,8 +182,8 @@ class LocalReminderService implements ReminderScheduler {
     final today = DateTime(now.year, now.month, now.day);
 
     if (settings.remindersEnabled) {
-      final completeIds = entries
-          .where((entry) => entry.isComplete)
+      final loggedIds = entries
+          .where((entry) => entry.isLogged)
           .map((entry) => entry.id)
           .toSet();
       // Keep below Android's common 500-alarm limit while covering two weeks.
@@ -194,7 +194,7 @@ class LocalReminderService implements ReminderScheduler {
           hour < settings.reminderEndHour;
           hour++
         ) {
-          if (completeIds.contains(entryId(dateKey(date), hour))) continue;
+          if (loggedIds.contains(entryId(dateKey(date), hour))) continue;
           final triggerBase = date.add(Duration(hours: hour + 1));
           final trigger = tz.TZDateTime(
             tz.local,

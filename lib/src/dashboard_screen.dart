@@ -445,7 +445,7 @@ class _TodayTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = dayOnly(now);
-    final logged = store.completedCount(today);
+    final logged = store.loggedCount(today);
     final current = store.entryFor(today, now.hour);
     final task = current?.task.trim() ?? '';
     return _Tile(
@@ -641,7 +641,7 @@ class _StreakTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final streak = store.trackingStreak(today);
-    final todayTracked = store.trackedCount(today);
+    final todayTracked = store.loggedCount(today);
     return _Tile(
       label: 'Streak',
       icon: Icons.local_fire_department_rounded,
