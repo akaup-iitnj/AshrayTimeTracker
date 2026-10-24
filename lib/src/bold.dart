@@ -545,7 +545,10 @@ class BoldProgress extends StatelessWidget {
   }
 }
 
-/// Chronicle's mark: a yellow tile with a heavy C, outlined and shadowed.
+/// Chronicle's mark, "Hours to blocks": an hourglass whose sand lands as
+/// hour blocks. The image comes from tool/brand/build_icons.py, the same
+/// source as the launcher and browser icons, and carries its own tile,
+/// outline and shadow.
 class ChronicleMark extends StatelessWidget {
   const ChronicleMark({super.key, this.size = 36});
 
@@ -553,23 +556,15 @@ class ChronicleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shadow = size >= 32 ? Bold.shadowSm + 1 : Bold.shadowSm;
     return Semantics(
       label: 'Chronicle',
-      child: Container(
+      image: true,
+      child: Image.asset(
+        'assets/brand/chronicle-icon.png',
         width: size,
         height: size,
-        margin: EdgeInsets.only(right: shadow, bottom: shadow),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Bold.yellow,
-          borderRadius: BorderRadius.circular(Bold.radiusSm),
-          border: Border.all(color: Bold.ink, width: Bold.border),
-          boxShadow: Bold.hardShadow(shadow),
-        ),
-        child: ExcludeSemantics(
-          child: Text('C', style: archivo(900, size: size * 0.58, height: 1)),
-        ),
+        filterQuality: FilterQuality.medium,
+        excludeFromSemantics: true,
       ),
     );
   }

@@ -6,6 +6,8 @@ An hour-by-hour log of your day for Android, Windows, and the web, built with Fl
 
 Chronicle wears the Bold theme from the Eisenhower app (`apps/web/src/themes.css`, `[data-theme='bold']`), the same one the Diwan Android app used: cream paper, black ink, 2dp black outlines, hard offset shadows, bright flat tiles, and Archivo ExtraBold headings over DM Sans. `lib/src/bold.dart` holds the tokens, the Material theme, and the shared widgets (`BoldCard`, `BoldButton`, `BoldTag`, `BoldProgress`). Both fonts are variable fonts under the SIL Open Font License (`assets/fonts/`).
 
+The logo, "Hours to blocks", is an hourglass whose blue sand lands as a pile of hour blocks in the category colours: passing time becomes the hours you log. `tool/brand/build_icons.py` draws it from one geometry and writes every icon from it: the web favicon and PWA icons, the Android launcher (legacy PNGs and the adaptive, themed and notification vectors), and `assets/brand/chronicle-icon.png` for the in-app mark. After changing it, run `python -I tool/brand/build_icons.py` from the repo root (it needs Chrome and Pillow).
+
 ## Current status
 
 The Android MVP, cloud sync, and native Windows client are complete. Version 0.4 adds automated reliability checks and portable CSV backups.

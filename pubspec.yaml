@@ -67,6 +67,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Chronicle's mark, rendered by tool/brand/build_icons.py.
+  assets:
+    - assets/brand/chronicle-icon.png
+
   # Bold theme fonts (SIL Open Font License; see assets/fonts/OFL-*.txt).
   # Both are variable fonts: styles set the weight axis through bold.dart.
   fonts:

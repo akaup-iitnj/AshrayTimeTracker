@@ -183,7 +183,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     labelType: NavigationRailLabelType.all,
                     leading: const Padding(
                       padding: EdgeInsets.only(top: 16, bottom: 20),
-                      child: ChronicleMark(size: 40),
+                      child: ChronicleMark(size: 48),
                     ),
                     destinations: destinations
                         .map(
