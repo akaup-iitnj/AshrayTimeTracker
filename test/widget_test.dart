@@ -16,10 +16,73 @@ Future<AppStore> createTestStore() async {
   return AppStore.load(LocalRepository(preferences), NoopReminderScheduler());
 }
 
+/// The app opens on the dashboard; most tests start from the Day tab.
+Future<void> openDay(WidgetTester tester) async {
+  await tester.tap(find.text('Day'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets('opens on the dashboard and its tiles open each view', (
+    tester,
+  ) async {
+    final store = await createTestStore();
+    await store.saveEntry(
+      date: DateTime.now(),
+      hourStart: 0,
+      task: 'Dashboard entry',
+      categoryId: 'work',
+      productive: true,
+    );
+    await tester.pumpWidget(TimeTrackerApp(store: store));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TRACKED THIS WEEK'), findsOneWidget);
+    expect(find.text('of 24 hours logged'), findsOneWidget);
+    expect(find.text('Your day'), findsNothing);
+
+    await tester.tap(find.text('DAILY REPORT'));
+    await tester.pumpAndSettle();
+    expect(find.text('Daily report'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Dashboard'));
+    await tester.pumpAndSettle();
+    expect(find.text('TRACKED THIS WEEK'), findsOneWidget);
+
+    await tester.tap(find.text('TODAY'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your day'), findsOneWidget);
+    expect(find.text('Dashboard entry'), findsOneWidget);
+  });
+
+  testWidgets('returns to the dashboard after time away', (tester) async {
+    final store = await createTestStore();
+    await tester.pumpWidget(
+      TimeTrackerApp(store: store, homeAfter: Duration.zero),
+    );
+    await openDay(tester);
+    expect(find.text('Your day'), findsOneWidget);
+
+    for (final state in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('TRACKED THIS WEEK'), findsOneWidget);
+    expect(find.text('Your day'), findsNothing);
+  });
+
   testWidgets('shows all core day-view controls', (tester) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     expect(find.text('Your day'), findsOneWidget);
     expect(find.text('0 / 24 logged'), findsOneWidget);
@@ -30,6 +93,7 @@ void main() {
   testWidgets('logs a task and category for an hour', (tester) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     await tester.tap(find.text('Tap to add what you did').first);
     await tester.pumpAndSettle();
@@ -49,6 +113,7 @@ void main() {
   testWidgets('saves an hour with only a productive rating', (tester) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     await tester.tap(find.text('Tap to add what you did').first);
     await tester.pumpAndSettle();
@@ -78,6 +143,7 @@ void main() {
   testWidgets('opens a month calendar from the day header', (tester) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     await tester.tap(find.byTooltip('Open calendar'));
     await tester.pumpAndSettle();
@@ -91,10 +157,12 @@ void main() {
   ) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     await tester.tap(find.text('Tap to add what you did').first);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('New category'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('New category'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Deep Work');
@@ -118,6 +186,7 @@ void main() {
       categoryId: 'work',
     );
     await tester.pumpWidget(TimeTrackerApp(store: store));
+    await openDay(tester);
 
     await tester.tap(find.text('Initial task'));
     await tester.pumpAndSettle();

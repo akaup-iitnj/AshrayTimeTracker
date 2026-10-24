@@ -19,6 +19,9 @@ void main() {
       NoopReminderScheduler(),
     );
     await tester.pumpWidget(TimeTrackerApp(store: firstStore));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Day'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Tap to add what you did').first);
     await tester.pumpAndSettle();
@@ -47,6 +50,9 @@ void main() {
       NoopReminderScheduler(),
     );
     await tester.pumpWidget(TimeTrackerApp(store: restartedStore));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Day'));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     expect(find.text('End-to-end smoke entry'), findsOneWidget);
 

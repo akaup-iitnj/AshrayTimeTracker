@@ -34,6 +34,7 @@ The Android MVP, cloud sync, and native Windows client are complete. Version 0.4
 - Schedule a configurable morning reminder for two saved videos.
 - Record a private daily check-in with mood, energy, calm, and reflection text.
 - Rate an hour productive or not straight from its reminder, without opening the app.
+- Open on a dashboard: this week's tracked hours as a chart, and tiles for Today, the report, the check-in, your logging streak and reminders. The logo returns to it, and so does coming back after a couple of minutes away.
 
 The Supabase project is configured and its Phase 2 migration has been applied. Open **Settings → Data → Cloud sync** to create an account or sign in.
 

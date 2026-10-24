@@ -141,6 +141,33 @@ class _EditHourScreenState extends State<EditHourScreen> {
                 const SizedBox(height: 2),
                 Text(dateText, style: dmSans(600, size: 15, color: Bold.muted)),
                 const SizedBox(height: 26),
+                // Rating, description and Save come first so they stay above
+                // the keyboard; categories are the extra step at the bottom.
+                const _SectionLabel('Was it productive?'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RatingTile(
+                        label: 'Productive',
+                        icon: Icons.thumb_up_alt_rounded,
+                        color: Bold.sky,
+                        selected: _productive == true,
+                        onTap: () => _toggleRating(true),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _RatingTile(
+                        label: 'Not productive',
+                        icon: Icons.thumb_down_alt_rounded,
+                        color: Bold.coral,
+                        selected: _productive == false,
+                        onTap: () => _toggleRating(false),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
                 const _SectionLabel('What did you do?'),
                 TextField(
                   controller: _taskController,
@@ -152,7 +179,14 @@ class _EditHourScreenState extends State<EditHourScreen> {
                     hintText: 'A short description is enough',
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
+                BoldButton(
+                  label: _saving ? 'Saving…' : 'Save hour',
+                  icon: const Icon(Icons.check_rounded),
+                  expand: true,
+                  onPressed: _canSave ? _save : null,
+                ),
+                const SizedBox(height: 32),
                 const _SectionLabel('Category'),
                 Wrap(
                   spacing: 8,
@@ -182,38 +216,6 @@ class _EditHourScreenState extends State<EditHourScreen> {
                       onPressed: _addCategory,
                     ),
                   ],
-                ),
-                const SizedBox(height: 24),
-                const _SectionLabel('Was it productive?'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RatingTile(
-                        label: 'Productive',
-                        icon: Icons.thumb_up_alt_rounded,
-                        color: Bold.sky,
-                        selected: _productive == true,
-                        onTap: () => _toggleRating(true),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _RatingTile(
-                        label: 'Not productive',
-                        icon: Icons.thumb_down_alt_rounded,
-                        color: Bold.coral,
-                        selected: _productive == false,
-                        onTap: () => _toggleRating(false),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                BoldButton(
-                  label: _saving ? 'Saving…' : 'Save hour',
-                  icon: const Icon(Icons.check_rounded),
-                  expand: true,
-                  onPressed: _canSave ? _save : null,
                 ),
               ],
             ),

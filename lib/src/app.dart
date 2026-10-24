@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'app_store.dart';
 import 'bold.dart';
 import 'csv_export.dart';
+import 'dashboard_screen.dart';
 import 'edit_hour_screen.dart';
 import 'models.dart';
 import 'morning_videos_screen.dart';
@@ -18,10 +19,14 @@ class TimeTrackerApp extends StatelessWidget {
     super.key,
     required this.store,
     this.csvExporter = const PlatformCsvExporter(),
+    this.homeAfter = const Duration(minutes: 2),
   });
 
   final AppStore store;
   final CsvExporter csvExporter;
+
+  /// Coming back after at least this long away opens the dashboard again.
+  final Duration homeAfter;
 
   @override
   Widget build(BuildContext context) {
@@ -29,24 +34,49 @@ class TimeTrackerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Chronicler',
       theme: boldTheme(),
-      home: AppShell(store: store, csvExporter: csvExporter),
+      home: AppShell(
+        store: store,
+        csvExporter: csvExporter,
+        homeAfter: homeAfter,
+      ),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.store, required this.csvExporter});
+  const AppShell({
+    super.key,
+    required this.store,
+    required this.csvExporter,
+    this.homeAfter = const Duration(minutes: 2),
+  });
 
   final AppStore store;
   final CsvExporter csvExporter;
+  final Duration homeAfter;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
-  int _selectedIndex = 0;
+  /// The dashboard isn't a tab: it is where the app opens and where the
+  /// logo (and Back, from any tab) returns to.
+  static const _dashboard = -1;
+
+  int _view = _dashboard;
+  DateTime? _awaySince;
   DateTime _selectedDate = dayOnly(DateTime.now());
+
+  void _open(int view) {
+    setState(() {
+      // A tile summarises today, so it opens its view on today.
+      if (_view == _dashboard && view != _dashboard) {
+        _selectedDate = dayOnly(DateTime.now());
+      }
+      _view = view;
+    });
+  }
 
   @override
   void initState() {
@@ -76,13 +106,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      _awaySince ??= DateTime.now();
+    }
     if (state == AppLifecycleState.resumed) {
+      _returnHomeIfAway();
       unawaited(
         widget.store.applyPendingRatings().whenComplete(
           widget.store.synchronize,
         ),
       );
     }
+  }
+
+  /// Android resumes an app where it was left, and a browser tab keeps its
+  /// page, so opening Chronicler again would show the last tab. After a real
+  /// absence it shows the dashboard instead, unless an hour is mid-edit.
+  void _returnHomeIfAway() {
+    final since = _awaySince;
+    _awaySince = null;
+    if (since == null || !mounted || _view == _dashboard) return;
+    if (DateTime.now().difference(since) < widget.homeAfter) return;
+    if (Navigator.of(context).canPop()) return;
+    setState(() => _view = _dashboard);
   }
 
   void _applyQuickRatings() {
@@ -95,7 +142,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (target == null) return;
     setState(() {
       _selectedDate = dayOnly(target.date);
-      _selectedIndex = 0;
+      _view = 0;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -166,67 +213,155 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onDateChanged: _setDate,
       ),
       SettingsScreen(store: widget.store, csvExporter: widget.csvExporter),
+      DashboardScreen(store: widget.store, onOpen: _open),
     ];
+    final onDashboard = _view == _dashboard;
+    final stack = IndexedStack(
+      index: onDashboard ? pages.length - 1 : _view,
+      children: pages,
+    );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 760) {
+    return PopScope(
+      canPop: onDashboard,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _open(_dashboard);
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 760) {
+            return Scaffold(
+              body: SafeArea(
+                child: Row(
+                  children: [
+                    NavigationRail(
+                      selectedIndex: onDashboard ? null : _view,
+                      onDestinationSelected: _open,
+                      labelType: NavigationRailLabelType.all,
+                      leading: Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 20),
+                        child: _HomeButton(
+                          onTap: () => _open(_dashboard),
+                          child: const ChronicleMark(size: 48),
+                        ),
+                      ),
+                      destinations: destinations
+                          .map(
+                            (item) => NavigationRailDestination(
+                              icon: item.icon,
+                              selectedIcon: item.selectedIcon,
+                              label: Text(item.label),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const VerticalDivider(
+                      width: Bold.border,
+                      thickness: Bold.border,
+                      color: Bold.ink,
+                    ),
+                    Expanded(child: stack),
+                  ],
+                ),
+              ),
+            );
+          }
+
           return Scaffold(
             body: SafeArea(
-              child: Row(
+              child: Column(
                 children: [
-                  NavigationRail(
-                    selectedIndex: _selectedIndex,
-                    onDestinationSelected: (index) {
-                      setState(() => _selectedIndex = index);
-                    },
-                    labelType: NavigationRailLabelType.all,
-                    leading: const Padding(
-                      padding: EdgeInsets.only(top: 16, bottom: 20),
-                      child: ChronicleMark(size: 48),
-                    ),
-                    destinations: destinations
-                        .map(
-                          (item) => NavigationRailDestination(
-                            icon: item.icon,
-                            selectedIcon: item.selectedIcon,
-                            label: Text(item.label),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const VerticalDivider(
-                    width: Bold.border,
-                    thickness: Bold.border,
-                    color: Bold.ink,
-                  ),
-                  Expanded(
-                    child: IndexedStack(index: _selectedIndex, children: pages),
-                  ),
+                  _PhoneTopBar(onHome: () => _open(_dashboard)),
+                  Expanded(child: stack),
                 ],
               ),
             ),
+            bottomNavigationBar: DecoratedBox(
+              // In front: the bar paints its own background over a border behind.
+              position: DecorationPosition.foreground,
+              decoration: const BoxDecoration(
+                border: Border(top: Bold.outline),
+              ),
+              // NavigationBar always marks a tab; on the dashboard none is
+              // current, so it drops the indicator and the filled icons.
+              child: NavigationBarTheme(
+                data: NavigationBarTheme.of(context).copyWith(
+                  indicatorColor: onDashboard ? Colors.transparent : null,
+                  indicatorShape: onDashboard
+                      ? const RoundedRectangleBorder()
+                      : null,
+                ),
+                child: NavigationBar(
+                  selectedIndex: onDashboard ? 0 : _view,
+                  onDestinationSelected: _open,
+                  destinations: [
+                    for (final item in destinations)
+                      onDashboard
+                          ? NavigationDestination(
+                              icon: item.icon,
+                              selectedIcon: item.icon,
+                              label: item.label,
+                            )
+                          : item,
+                  ],
+                ),
+              ),
+            ),
           );
-        }
+        },
+      ),
+    );
+  }
+}
 
-        return Scaffold(
-          body: SafeArea(
-            child: IndexedStack(index: _selectedIndex, children: pages),
-          ),
-          bottomNavigationBar: DecoratedBox(
-            // In front: the bar paints its own background over a border behind.
-            position: DecorationPosition.foreground,
-            decoration: const BoxDecoration(border: Border(top: Bold.outline)),
-            child: NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) {
-                setState(() => _selectedIndex = index);
-              },
-              destinations: destinations,
+/// The logo as the way home: tapping it opens the dashboard.
+class _HomeButton extends StatelessWidget {
+  const _HomeButton({required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Dashboard',
+      child: Semantics(
+        button: true,
+        label: 'Open dashboard',
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(onTap: onTap, child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Phones have no rail, so the logo and wordmark sit in a slim bar on top.
+class _PhoneTopBar extends StatelessWidget {
+  const _PhoneTopBar({required this.onHome});
+
+  final VoidCallback onHome;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      decoration: const BoxDecoration(border: Border(bottom: Bold.outline)),
+      child: Row(
+        children: [
+          _HomeButton(
+            onTap: onHome,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const ChronicleMark(size: 34),
+                const SizedBox(width: 10),
+                Text('Chronicler', style: archivo(900, size: 20)),
+              ],
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
