@@ -304,6 +304,38 @@ void main() {
     },
   );
 
+  test('Google sign-in links the account and runs the first sync', () async {
+    final cloud = FakeCloudRepository(signedIn: false);
+    final store = await createStore(cloud);
+
+    await store.signInWithGoogle();
+
+    expect(cloud.googleSignIns, 1);
+    expect(store.isCloudSignedIn, isTrue);
+    expect(cloud.fetchCount, 1);
+    expect(store.syncError, isNull);
+  });
+
+  test(
+    'Google sign-in to a different account is refused on a linked device',
+    () async {
+      final cloud = FakeCloudRepository(signedIn: false, userId: 'user-2');
+      final store = await createStore(
+        cloud,
+        initialPreferences: const <String, Object>{
+          'linked_cloud_user_v1': 'user-1',
+        },
+      );
+
+      await store.signInWithGoogle();
+
+      expect(cloud.signedIn, isFalse);
+      expect(store.isCloudSignedIn, isFalse);
+      expect(store.syncError, contains('different account'));
+      expect(cloud.fetchCount, 0);
+    },
+  );
+
   test('a missing Supabase schema becomes an actionable sync error', () async {
     final cloud = FakeCloudRepository()
       ..fetchError = Exception(

@@ -79,6 +79,24 @@ void main() {
     expect(find.text('Your day'), findsNothing);
   });
 
+  testWidgets('the dashboard asks a signed-out device to sign in', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final store = await AppStore.load(
+      LocalRepository(await SharedPreferences.getInstance()),
+      NoopReminderScheduler(),
+      FakeCloudRepository(signedIn: false),
+    );
+    await tester.pumpWidget(TimeTrackerApp(store: store));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This device is not signed in'), findsOneWidget);
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sync across devices'), findsOneWidget);
+  });
+
   testWidgets('shows all core day-view controls', (tester) async {
     final store = await createTestStore();
     await tester.pumpWidget(TimeTrackerApp(store: store));
@@ -273,6 +291,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), 'person@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'password');
+    await tester.dragUntilVisible(
+      find.text('Sign in'),
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
 

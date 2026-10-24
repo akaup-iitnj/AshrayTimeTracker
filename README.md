@@ -171,6 +171,18 @@ To build it locally:
 flutter build web --release --base-href /AshrayTimeTracker/
 ```
 
+## Google sign-in
+
+The account screen offers **Continue with Google** beside email and password. Supabase links a Google sign-in to an existing account with the same confirmed email, so it opens the same history. The app still refuses a sign-in to a different account than the one an installation already syncs with.
+
+It needs this one-time setup:
+
+1. In Google Cloud Console, create an OAuth client of type **Web application**, with the authorized redirect URI `https://zezemjwngaqcccnqzirl.supabase.co/auth/v1/callback`. Configure the consent screen first if asked.
+2. In Supabase, open **Authentication → Providers → Google**, turn it on, and paste the client ID and client secret.
+3. In Supabase, open **Authentication → URL Configuration**. Set the Site URL to `https://akaup-iitnj.github.io/AshrayTimeTracker/` and add these Redirect URLs: `https://akaup-iitnj.github.io/AshrayTimeTracker/` and `chronicler://login-callback`.
+
+The web app returns to the page it was opened from. Android returns through `chronicler://login-callback`, which `AndroidManifest.xml` claims for the app.
+
 ## Run it on Windows
 
 The Windows toolchain is installed on the current development PC. Build and launch the optimized desktop app with:

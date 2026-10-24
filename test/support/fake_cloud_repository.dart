@@ -77,6 +77,14 @@ class FakeCloudRepository implements CloudRepository {
     this.email = email.trim();
   }
 
+  int googleSignIns = 0;
+
+  @override
+  Future<void> signInWithGoogle() async {
+    googleSignIns++;
+    signedIn = true;
+  }
+
   @override
   Future<void> signOut() async {
     signedIn = false;

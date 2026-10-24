@@ -18,7 +18,8 @@ class AppStore extends ChangeNotifier {
     this._settings,
     this._linkedCloudUserId,
   ) {
-    _authSubscription = _cloud?.authChanges.listen((_) => notifyListeners());
+    _wasSignedIn = _cloud?.isSignedIn ?? false;
+    _authSubscription = _cloud?.authChanges.listen((_) => _onAuthChanged());
   }
 
   final LocalRepository _repository;
@@ -30,6 +31,7 @@ class AppStore extends ChangeNotifier {
   AppSettings _settings;
   String? _linkedCloudUserId;
   StreamSubscription<void>? _authSubscription;
+  bool _wasSignedIn = false;
   bool _isSyncing = false;
   bool _syncRequested = false;
   DateTime? _lastSyncAt;
@@ -479,6 +481,41 @@ class AppStore extends ChangeNotifier {
       rethrow;
     }
     notifyListeners();
+    await synchronize();
+  }
+
+  /// Opens Google sign-in. A browser sign-in finishes when the session
+  /// arrives through [CloudRepository.authChanges].
+  Future<void> signInWithGoogle() async {
+    final cloud = _requireCloud();
+    await cloud.signInWithGoogle();
+    if (cloud.isSignedIn && !_wasSignedIn) {
+      _wasSignedIn = true;
+      await _completeSignIn();
+    }
+  }
+
+  void _onAuthChanged() {
+    final signedIn = _cloud?.isSignedIn ?? false;
+    final justSignedIn = signedIn && !_wasSignedIn;
+    _wasSignedIn = signedIn;
+    notifyListeners();
+    if (justSignedIn) unawaited(_completeSignIn());
+  }
+
+  /// The checks a password sign-in makes, for a sign-in that completed
+  /// elsewhere (Google, in the browser): this installation must stay with
+  /// the account it already syncs with, then the first sync runs.
+  Future<void> _completeSignIn() async {
+    final cloud = _requireCloud();
+    try {
+      await _ensureLinkedCloudUser();
+    } on Object catch (error) {
+      await cloud.signOut();
+      _syncError = _friendlySyncError(error);
+      notifyListeners();
+      return;
+    }
     await synchronize();
   }
 

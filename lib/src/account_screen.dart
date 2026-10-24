@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_store.dart';
+import 'bold.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key, required this.store});
@@ -75,6 +76,20 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _busy = true;
+      _formError = null;
+    });
+    try {
+      await widget.store.signInWithGoogle();
+    } on Object catch (error) {
+      if (mounted) setState(() => _formError = _friendlyError(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   String _friendlyError(Object error) {
     if (error is AuthException) return error.message;
     return error.toString().replaceFirst(RegExp(r'^\w+Exception:\s*'), '');
@@ -120,6 +135,35 @@ class _AccountScreenState extends State<AccountScreen> {
                             ),
                           ),
                           const SizedBox(height: 28),
+                          BoldButton(
+                            label: 'Continue with Google',
+                            icon: const Icon(Icons.login_rounded),
+                            color: Bold.panel,
+                            foreground: Bold.ink,
+                            expand: true,
+                            onPressed: _busy ? null : _signInWithGoogle,
+                          ),
+                          const SizedBox(height: 22),
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: Text(
+                                  'or use email',
+                                  style: dmSans(
+                                    700,
+                                    size: 13,
+                                    color: Bold.muted,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
                           TextField(
                             controller: _emailController,
                             enabled: !_busy,

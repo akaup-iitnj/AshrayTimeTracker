@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'cloud_config.dart';
 
 import 'models.dart';
 
@@ -30,6 +33,10 @@ abstract class CloudRepository {
 
   Future<CloudAuthResult> signUp(String email, String password);
   Future<void> signIn(String email, String password);
+
+  /// Starts Google sign-in in the browser. It completes later, when the
+  /// browser returns to the app and [authChanges] reports the session.
+  Future<void> signInWithGoogle();
   Future<void> signOut();
   Future<CloudSnapshot> fetchSnapshot();
   Future<void> pushSnapshot(CloudSnapshot snapshot);
@@ -71,6 +78,18 @@ class SupabaseCloudRepository implements CloudRepository {
     await _client.auth.signInWithPassword(
       email: email.trim(),
       password: password,
+    );
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    await _client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      // The web app returns to the page it is served from; Android returns
+      // through the app's own link.
+      redirectTo: kIsWeb
+          ? '${Uri.base.origin}${Uri.base.path}'
+          : CloudConfig.mobileAuthRedirect,
     );
   }
 

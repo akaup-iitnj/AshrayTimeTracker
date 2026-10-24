@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'account_screen.dart';
 import 'app_store.dart';
 import 'bold.dart';
 import 'models.dart';
@@ -49,6 +50,11 @@ class DashboardScreen extends StatelessWidget {
                   style: dmSans(600, size: 15, color: Bold.muted),
                 ),
                 const SizedBox(height: 20),
+                if (store.cloudAvailable &&
+                    (!store.isCloudSignedIn || store.syncError != null)) ...[
+                  _SyncBanner(store: store),
+                  const SizedBox(height: 12),
+                ],
                 _WeekCard(store: store, today: today),
                 const SizedBox(height: 12),
                 for (var i = 0; i < tiles.length; i += twoColumns ? 2 : 1) ...[
@@ -84,6 +90,73 @@ class DashboardScreen extends StatelessWidget {
     if (now.hour < 12) return 'Good morning';
     if (now.hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+}
+
+// ------------------------------------------------------------------ sync
+
+/// Says so when this device isn't syncing, so an empty dashboard is never
+/// mistaken for "nothing logged": a browser starts empty until it signs in.
+class _SyncBanner extends StatelessWidget {
+  const _SyncBanner({required this.store});
+
+  final AppStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = store.isCloudSignedIn;
+    final error = store.syncError;
+    return BoldCard(
+      color: Bold.pink,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Row(
+        children: [
+          Icon(
+            signedIn ? Icons.sync_problem_rounded : Icons.cloud_off_rounded,
+            size: 30,
+            color: Bold.ink,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  signedIn
+                      ? "Sync isn't working"
+                      : 'This device is not signed in',
+                  style: archivo(800, size: 18),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  signedIn
+                      ? error ?? ''
+                      : 'Sign in to bring in the hours you logged on your '
+                            'other devices.',
+                  style: dmSans(600, size: 14, color: Bold.ink),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          BoldCard(
+            color: Bold.panel,
+            radius: Bold.radiusSm,
+            shadow: Bold.shadowSm,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => AccountScreen(store: store),
+              ),
+            ),
+            child: Text(
+              signedIn ? 'Details' : 'Sign in',
+              style: dmSans(800, size: 14, color: Bold.ink),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
